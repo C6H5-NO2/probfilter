@@ -19,7 +19,7 @@ class BloomStrategy[T](val numBits: Int, val numHashes: Int)
 
       override def next(): Int = {
         val result = (combined & Int.MaxValue) % numBits
-        combined += hash2 ^ (numHashes - i)
+        combined += hash2
         i += 1
         result
       }
