@@ -34,3 +34,22 @@ class BloomStrategy[T](val numBits: Int, val numHashes: Int)
     override def next(): Integer = scalaIterator.next()
   }
 }
+
+
+object BloomStrategy {
+  def create[T](fpp: Double, capacity: Int)(implicit funnel: Funnel[_ >: T]): BloomStrategy[T] = {
+    require(fpp > 0 && fpp < 1, s"BloomStrategy.create: fpp = $fpp not in (0, 1)")
+    require(capacity > 0, s"BloomStrategy.create: capacity = $fpp not > 0")
+    val m = optimalBits(fpp, capacity)
+    require(m > 0 && m < Int.MaxValue, s"BloomStrategy.create: optimalBits = $m too large")
+    val h = optimalHashes(fpp)
+    require(h > 0 && h < Byte.MaxValue, s"BloomStrategy.create: optimalHashes = $h too large")
+    new BloomStrategy[T](m, h)
+  }
+
+  private val ln2: Double = math.log(2)
+
+  private def optimalBits(p: Double, n: Int): Int = math.ceil(n * -math.log(p) / (ln2 * ln2)).toInt
+
+  private def optimalHashes(p: Double): Int = math.ceil(-math.log(p) / ln2).toInt
+}

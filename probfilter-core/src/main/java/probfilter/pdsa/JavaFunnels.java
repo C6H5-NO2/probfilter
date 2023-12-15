@@ -1,7 +1,9 @@
 package probfilter.pdsa;
 
+import java.io.Serializable;
 
-public class JavaFunnels {
+
+public class JavaFunnels implements Serializable {
     private JavaFunnels() {}
 
     public static void stringFunnel(String from, Sink into) {
@@ -10,9 +12,5 @@ public class JavaFunnels {
 
     public static void intFunnel(Integer from, Sink into) {
         ScalaFunnels.IntFunnel$.MODULE$.funnel(from.intValue(), into);
-    }
-
-    public static void byteFunnel(Byte from, Sink into) {
-        ScalaFunnels.ByteFunnel$.MODULE$.funnel(from.byteValue(), into);
     }
 }
