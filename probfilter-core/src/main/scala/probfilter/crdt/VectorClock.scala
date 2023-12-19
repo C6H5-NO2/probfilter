@@ -23,5 +23,5 @@ class VectorClock private(private val clock: TreeMap[Short, Int]) extends Serial
     new VectorClock(clock2)
   }
 
-  override def toString: String = ???
+  override def toString: String = clock.map { case (r, t) => s"$r->$t" }.mkString("C(", ",", ")")
 }

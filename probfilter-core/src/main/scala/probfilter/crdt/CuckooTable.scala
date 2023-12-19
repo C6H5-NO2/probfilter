@@ -64,5 +64,8 @@ class CuckooTable private(private val data: HashMap[Int, Vector[Long]], @transie
     case None => this
   }
 
-  override def toString: String = data.view.mapValues(_.map(CuckooEntry.fromLong)).toMap.toString
+  override def toString: String = data.view.map { case (i, v) =>
+    val e = v.view.map(CuckooEntry.fromLong).mkString("[", ",", "]")
+    s"$i->$e"
+  }.mkString("T{", ",", "}")
 }

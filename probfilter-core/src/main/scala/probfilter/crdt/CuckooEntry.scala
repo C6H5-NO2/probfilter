@@ -30,7 +30,7 @@ class CuckooEntry(val fingerprint: Byte, val replicaId: Short, val timestamp: In
     fp | id | ts
   }
 
-  override def toString: String = s"(f$fingerprint,p$replicaId,t$timestamp)"
+  override def toString: String = s"E(f$fingerprint,p$replicaId,t$timestamp)"
 }
 
 
