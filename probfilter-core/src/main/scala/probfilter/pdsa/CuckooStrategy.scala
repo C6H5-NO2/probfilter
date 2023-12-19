@@ -1,6 +1,6 @@
 package probfilter.pdsa
 
-import probfilter.pdsa.CuckooStrategy.CuckooPair
+import probfilter.pdsa.CuckooStrategy.{CuckooPair, CuckooTriple}
 import probfilter.pdsa.ScalaFunnels.IntFunnel
 
 
@@ -19,6 +19,11 @@ class CuckooStrategy[T](val numBuckets: Int, val bucketSize: Int, val maxIterati
     (i ^ (MurmurHash3.hash(fp.toInt) & Int.MaxValue).toInt) % numBuckets
   }
 
+  def getCuckooTriple(elem: T): CuckooTriple = {
+    val pair = getCuckooPair(elem)
+    new CuckooTriple(pair.fp, pair.i, getAltBucket(pair))
+  }
+
   // def fpp: Double = {
   //   val p = 8
   //   bucketSize * 2.0 / (1 << p)
@@ -28,4 +33,5 @@ class CuckooStrategy[T](val numBuckets: Int, val bucketSize: Int, val maxIterati
 
 object CuckooStrategy {
   class CuckooPair(val fp: Byte, val i: Int)
+  class CuckooTriple(val fp: Byte, val i: Int, val j: Int)
 }

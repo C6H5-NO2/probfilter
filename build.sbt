@@ -9,6 +9,7 @@ lazy val commonSettings = Seq(
 
 lazy val root = Project("probfilter", file(".")).aggregate(
   core,
+  akka,
   sample
 )
 
@@ -16,13 +17,18 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
   commonSettings,
   version := "0.1.0-alpha",
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
     "com.google.guava" % "guava" % guavaVersion,
-    "org.scala-lang" % "scala-reflect" % scalaVersion.value
   )
 )
 
-lazy val sample = Project("probfilter-sample", file("probfilter-sample")).dependsOn(core).settings(
+lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(
+  commonSettings,
+  libraryDependencies ++= Seq(
+    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
+  )
+)
+
+lazy val sample = Project("probfilter-sample", file("probfilter-sample")).dependsOn(akka).settings(
   commonSettings,
   libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion

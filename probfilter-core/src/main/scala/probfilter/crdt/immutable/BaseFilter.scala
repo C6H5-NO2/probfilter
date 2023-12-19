@@ -8,7 +8,7 @@ trait BaseFilter[E, T <: BaseFilter[E, T]] extends Serializable {
 
   def add(elem: E): Try[T]
 
-  def remove(elem: E): Try[T] = throw new UnsupportedOperationException("BaseFilter.remove")
+  def remove(elem: E): T = throw new UnsupportedOperationException("BaseFilter.remove")
 
   def merge(that: T): T
 }

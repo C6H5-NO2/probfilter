@@ -3,7 +3,7 @@ package probfilter.crdt
 import java.util.Optional
 
 
-class CuckooEntry(val fingerprint: Byte, val timestamp: Int, val replicaId: Short)
+class CuckooEntry(val fingerprint: Byte, val replicaId: Short, val timestamp: Int)
   extends PartiallyOrdered[CuckooEntry] {
   override def tryCompareTo[B >: CuckooEntry : AsPartiallyOrdered](that: B): Option[Int] = that match {
     case that: CuckooEntry => {
@@ -29,6 +29,8 @@ class CuckooEntry(val fingerprint: Byte, val timestamp: Int, val replicaId: Shor
     val ts = timestamp.toLong & 0xffff_ffff
     fp | id | ts
   }
+
+  override def toString: String = s"(f$fingerprint,p$replicaId,t$timestamp)"
 }
 
 
@@ -37,6 +39,6 @@ object CuckooEntry {
     val fp = (long >>> 48) & 0xff
     val id = (long >>> 32) & 0xffff
     val ts = long & 0xffff_ffff
-    new CuckooEntry(fp.toByte, ts.toInt, id.toShort)
+    new CuckooEntry(fp.toByte, id.toShort, ts.toInt)
   }
 }
