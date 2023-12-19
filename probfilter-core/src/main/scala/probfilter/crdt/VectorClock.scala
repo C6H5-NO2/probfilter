@@ -1,35 +1,27 @@
 package probfilter.crdt
 
-import akka.cluster.{VectorClock => AkkaVectorClock}
-import probfilter.crdt.VectorClock.create
+import scala.collection.immutable.TreeMap
 
 
 @SerialVersionUID(1L)
-class VectorClock private(private val clock: AkkaVectorClock) extends Serializable {
-  def this() = this(create())
+class VectorClock private(private val clock: TreeMap[Short, Int]) extends Serializable {
+  def this() = this(TreeMap.empty)
 
-  def get(replicaId: Long): Long = clock.versions.getOrElse(replicaId.toString, 0)
+  def get(replicaId: Short): Int = clock.getOrElse(replicaId, 0)
 
-  def inc(replicaId: Long): VectorClock = new VectorClock(clock :+ replicaId.toString)
-
-  def merge(that: VectorClock): VectorClock = new VectorClock(this.clock merge that.clock)
-
-  override def toString: String = clock.toString()
-}
-
-
-object VectorClock {
-
-  import scala.collection.immutable.TreeMap
-  import scala.reflect.runtime.universe
-
-  private val ctorMirror: universe.MethodMirror = {
-    val rtMirror = universe.runtimeMirror(getClass.getClassLoader)
-    val clsSymbol = universe.typeOf[AkkaVectorClock].typeSymbol.asClass
-    val clsMirror = rtMirror.reflectClass(clsSymbol)
-    val ctorSymbol = clsSymbol.typeSignature.decl(universe.termNames.CONSTRUCTOR).asMethod
-    clsMirror.reflectConstructor(ctorSymbol)
+  def inc(replicaId: Short): VectorClock = {
+    val ts = clock.getOrElse(replicaId, 0) + 1
+    new VectorClock(clock.updated(replicaId, ts))
   }
 
-  private def create(): AkkaVectorClock = ctorMirror(TreeMap.empty[String, Long]).asInstanceOf[AkkaVectorClock]
+  def merge(that: VectorClock): VectorClock = {
+    var clock2 = that.clock
+    for ((id, ts) <- this.clock) {
+      if (Integer.compareUnsigned(ts, clock2.getOrElse(id, 0)) > 0)
+        clock2 = clock2.updated(id, ts)
+    }
+    new VectorClock(clock2)
+  }
+
+  override def toString: String = ???
 }

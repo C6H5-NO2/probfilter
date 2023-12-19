@@ -19,10 +19,10 @@ class CuckooStrategy[T](val numBuckets: Int, val bucketSize: Int, val maxIterati
     (i ^ (MurmurHash3.hash(fp.toInt) & Int.MaxValue).toInt) % numBuckets
   }
 
-  def fpp: Double = {
-    val p = 8
-    bucketSize * 2.0 / (1 << p)
-  }
+  // def fpp: Double = {
+  //   val p = 8
+  //   bucketSize * 2.0 / (1 << p)
+  // }
 }
 
 

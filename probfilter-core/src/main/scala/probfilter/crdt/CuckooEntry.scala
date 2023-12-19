@@ -3,17 +3,17 @@ package probfilter.crdt
 import java.util.Optional
 
 
-@SerialVersionUID(1L)
-case class CuckooEntry(fingerprint: Byte, timestamp: Long, replicaId: Long) extends PartiallyOrdered[CuckooEntry] with Serializable {
+class CuckooEntry(val fingerprint: Byte, val timestamp: Int, val replicaId: Short)
+  extends PartiallyOrdered[CuckooEntry] {
   override def tryCompareTo[B >: CuckooEntry : AsPartiallyOrdered](that: B): Option[Int] = that match {
     case that: CuckooEntry => {
       if (this.fingerprint == that.fingerprint && this.replicaId == that.replicaId) {
-        Some(java.lang.Long.compare(this.timestamp, that.timestamp))
+        Some(Integer.compareUnsigned(this.timestamp, that.timestamp))
       } else {
         None
       }
     }
-    case _ => throw new IllegalArgumentException(s"CuckooEntry.tryCompareTo: Invalid parameter type for $that")
+    case _ => throw new IllegalArgumentException(s"CuckooEntry.tryCompareTo: Illegal type $that")
   }
 
   def tryCompareToAsJava(that: CuckooEntry): Optional[Integer] = {
@@ -21,5 +21,22 @@ case class CuckooEntry(fingerprint: Byte, timestamp: Long, replicaId: Long) exte
       case Some(o) => Optional.of(o)
       case None => Optional.empty()
     }
+  }
+
+  def toLong: Long = {
+    val fp = (fingerprint.toLong & 0xff) << 48
+    val id = (replicaId.toLong & 0xffff) << 32
+    val ts = timestamp.toLong & 0xffff_ffff
+    fp | id | ts
+  }
+}
+
+
+object CuckooEntry {
+  def fromLong(long: Long): CuckooEntry = {
+    val fp = (long >>> 48) & 0xff
+    val id = (long >>> 32) & 0xffff
+    val ts = long & 0xffff_ffff
+    new CuckooEntry(fp.toByte, ts.toInt, id.toShort)
   }
 }
