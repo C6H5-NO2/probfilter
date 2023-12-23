@@ -1,19 +1,19 @@
 package probfilter.crdt.immutable
 
 import probfilter.crdt.immutable.AWCuckooFilter.{CuckooBucketOverflowException, CuckooMaxIterationException}
-import probfilter.crdt.{CuckooEntry, CuckooTable, VectorClock}
+import probfilter.crdt.{CuckooEntry, CuckooTable, MapSeqCuckooTable, VectorClock}
 import probfilter.pdsa.CuckooStrategy
+import probfilter.util.{Mergeable, PartialOrderOps}
 
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 
 class AWCuckooFilter[T] private(
-  val strategy: CuckooStrategy[T],
-  val sid: Short,
-  val clock: VectorClock,
-  val data: CuckooTable
-) extends BaseFilter[T, AWCuckooFilter[T]] {
-  def this(strategy: CuckooStrategy[T], sid: Short) = this(strategy, sid, new VectorClock(), new CuckooTable())
+  val strategy: CuckooStrategy[T], val sid: Short, val clock: VectorClock, val data: CuckooTable
+) extends BaseFilter[T, AWCuckooFilter[T]] with Mergeable[AWCuckooFilter[T]] {
+  def this(strategy: CuckooStrategy[T], sid: Short) =
+    this(strategy, sid, new VectorClock(), new MapSeqCuckooTable())
 
   override def mightContains(elem: T): Boolean = {
     val triple = strategy.getCuckooTriple(elem)
@@ -45,7 +45,7 @@ class AWCuckooFilter[T] private(
     // do cuckoo
     var idx = triple.i
     for (_ <- 0 until strategy.maxIterations) {
-      val pair = data.swapAt(newEntry, idx)
+      val pair = data.replaceAt(newEntry, idx)
       newData = pair._1
       newEntry = pair._2
       idx = strategy.getAltBucket(newEntry.fingerprint, idx)
@@ -66,9 +66,9 @@ class AWCuckooFilter[T] private(
     val triple = strategy.getCuckooTriple(elem)
     val newData =
       if (data.containsAt(triple.fp, triple.i)) {
-        data.removeOnceIfAt(_.fingerprint == triple.fp, triple.i)
+        data.removeIfOnceAt(_.fingerprint == triple.fp, triple.i)
       } else {
-        data.removeOnceIfAt(_.fingerprint == triple.fp, triple.j)
+        data.removeIfOnceAt(_.fingerprint == triple.fp, triple.j)
       }
     new AWCuckooFilter[T](this.strategy, this.sid, this.clock, newData)
   }
@@ -80,7 +80,63 @@ class AWCuckooFilter[T] private(
     new AWCuckooFilter[T](this.strategy, this.sid, this.clock, newData)
   }
 
-  override def merge(that: AWCuckooFilter[T]): AWCuckooFilter[T] = ???
+  override def merge(that: AWCuckooFilter[T]): AWCuckooFilter[T] = {
+    val newData = mutable.HashMap.empty[Int, mutable.ArrayBuffer[Long]]
+
+    for (i <- 0 until strategy.numBuckets) {
+      (this.data.iteratorAt(i) concat that.data.iteratorAt(i))
+        .toVector.groupBy(CuckooEntry.fpOf).foreachEntry { (fp, en) =>
+          val j = strategy.getAltBucket(fp, i)
+          if (j < i && (this.data.iteratorAt(j) concat that.data.iteratorAt(j)).exists(CuckooEntry.fpEq(_, fp))) {
+            // already processed
+          } else {
+            val thisEntries = en concat this.data.filterAt(fp, j)
+            val thatEntries = that.data.filterAt(fp, i) concat that.data.filterAt(fp, j)
+
+            val buffer = mutable.ArrayBuffer.empty[Long]
+            buffer.addAll(thisEntries intersect thatEntries)
+            buffer.addAll(thisEntries diff thatEntries filter { long =>
+              val e = CuckooEntry.fromLong(long)
+              e.timestamp > that.clock.get(e.replicaId)
+            })
+            buffer.addAll(thatEntries diff thisEntries filter { long =>
+              val e = CuckooEntry.fromLong(long)
+              e.timestamp > this.clock.get(e.replicaId)
+            })
+            newData.getOrElseUpdate(i, mutable.ArrayBuffer.empty).addAll(buffer)
+          }
+        }
+    }
+
+    newData.mapValuesInPlace { (_, buffer) =>
+      import scala.jdk.CollectionConverters.{IterableHasAsJava, IterableHasAsScala}
+      val iter = buffer.map(CuckooEntry.fromLong).asJava
+      val maxs = PartialOrderOps.max(iter).asScala
+      mutable.ArrayBuffer.from(maxs.view.map(_.toLong))
+    }
+
+    for (i <- 0 until strategy.numBuckets) {
+      val bucket = newData.getOrElse(i, mutable.ArrayBuffer.empty)
+      var b = 0
+      while (b < bucket.length && bucket.length > strategy.bucketSize) {
+        val long = bucket(b)
+        val j = strategy.getAltBucket(CuckooEntry.fpOf(long), i)
+        if (j == i) {
+          b += 1
+        } else {
+          newData.getOrElseUpdate(j, mutable.ArrayBuffer.empty).addOne(long)
+          bucket.remove(b)
+        }
+      }
+    }
+
+    new AWCuckooFilter[T](
+      this.strategy,
+      this.sid,
+      this.clock merge that.clock,
+      new MapSeqCuckooTable(newData)
+    )
+  }
 }
 
 

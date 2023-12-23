@@ -1,7 +1,7 @@
 package probfilter.pdsa
 
+import probfilter.hash.{Funnel, MurmurHash3}
 import probfilter.pdsa.CuckooStrategy.{CuckooPair, CuckooTriple}
-import probfilter.pdsa.ScalaFunnels.IntFunnel
 
 
 @SerialVersionUID(1L)
@@ -9,13 +9,14 @@ class CuckooStrategy[T](val numBuckets: Int, val bucketSize: Int, val maxIterati
                        (implicit val funnel: Funnel[_ >: T]) extends Serializable {
   def getCuckooPair(elem: T): CuckooPair = {
     val hash = MurmurHash3.hash(elem)
-    val fp = (hash % 255 + 1).toByte
+    val fp = ((hash >>> 32) % 255 + 1).toByte
     new CuckooPair(fp, (hash & Int.MaxValue).toInt % numBuckets)
   }
 
   def getAltBucket(pair: CuckooPair): Int = getAltBucket(pair.fp, pair.i)
 
   def getAltBucket(fp: Byte, i: Int): Int = {
+    import probfilter.hash.ScalaFunnels.IntFunnel
     (i ^ (MurmurHash3.hash(fp.toInt) & Int.MaxValue).toInt) % numBuckets
   }
 

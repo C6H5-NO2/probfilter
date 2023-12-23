@@ -18,6 +18,9 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
   version := "0.1.0-alpha",
   libraryDependencies ++= Seq(
     "com.google.guava" % "guava" % guavaVersion,
+  ),
+  assemblyShadeRules ++= Seq(
+    ShadeRule.rename("com.google.**" -> "probfilter.shaded.@0").inAll
   )
 )
 

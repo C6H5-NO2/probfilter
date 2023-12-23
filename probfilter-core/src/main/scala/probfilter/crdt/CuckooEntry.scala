@@ -1,5 +1,7 @@
 package probfilter.crdt
 
+import probfilter.util.UnsignedString
+
 import java.util.Optional
 
 
@@ -30,7 +32,8 @@ class CuckooEntry(val fingerprint: Byte, val replicaId: Short, val timestamp: In
     fp | id | ts
   }
 
-  override def toString: String = s"E(f$fingerprint,p$replicaId,t$timestamp)"
+  override def toString: String =
+    s"E(f${UnsignedString.from(fingerprint)},p$replicaId,t${UnsignedString.from(timestamp)})"
 }
 
 
@@ -41,4 +44,8 @@ object CuckooEntry {
     val ts = long & 0xffff_ffff
     new CuckooEntry(fp.toByte, id.toShort, ts.toInt)
   }
+
+  def fpOf(long: Long): Byte = ((long >>> 48) & 0xff).toByte
+
+  def fpEq(long: Long, fp: Byte): Boolean = ((long >>> 48) & 0xff).toByte == fp
 }

@@ -1,5 +1,7 @@
 package probfilter.pdsa
 
+import probfilter.hash.{Funnel, MurmurHash3}
+
 import java.util.{Iterator => JavaIterator}
 import scala.collection.AbstractIterator
 

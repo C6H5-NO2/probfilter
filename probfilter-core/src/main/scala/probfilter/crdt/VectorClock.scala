@@ -1,10 +1,12 @@
 package probfilter.crdt
 
+import probfilter.util.{Mergeable, UnsignedString}
+
 import scala.collection.immutable.TreeMap
 
 
 @SerialVersionUID(1L)
-class VectorClock private(private val clock: TreeMap[Short, Int]) extends Serializable {
+class VectorClock private(private val clock: TreeMap[Short, Int]) extends Mergeable[VectorClock] with Serializable {
   def this() = this(TreeMap.empty)
 
   def get(replicaId: Short): Int = clock.getOrElse(replicaId, 0)
@@ -14,7 +16,7 @@ class VectorClock private(private val clock: TreeMap[Short, Int]) extends Serial
     new VectorClock(clock.updated(replicaId, ts))
   }
 
-  def merge(that: VectorClock): VectorClock = {
+  override def merge(that: VectorClock): VectorClock = {
     var clock2 = that.clock
     for ((id, ts) <- this.clock) {
       if (Integer.compareUnsigned(ts, clock2.getOrElse(id, 0)) > 0)
@@ -23,5 +25,6 @@ class VectorClock private(private val clock: TreeMap[Short, Int]) extends Serial
     new VectorClock(clock2)
   }
 
-  override def toString: String = clock.map { case (r, t) => s"$r->$t" }.mkString("C(", ",", ")")
+  override def toString: String =
+    clock.map { case (r, t) => s"$r->${UnsignedString.from(t)}" }.mkString("C(", ",", ")")
 }

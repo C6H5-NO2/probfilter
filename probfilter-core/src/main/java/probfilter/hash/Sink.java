@@ -1,4 +1,4 @@
-package probfilter.pdsa;
+package probfilter.hash;
 
 import com.google.common.hash.PrimitiveSink;
 

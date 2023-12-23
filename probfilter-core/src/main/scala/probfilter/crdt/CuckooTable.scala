@@ -1,71 +1,24 @@
 package probfilter.crdt
 
 import java.util.function.Predicate
-import scala.collection.immutable.HashMap
 
 
-@SerialVersionUID(1L)
-class CuckooTable private(private val data: HashMap[Int, Vector[Long]], @transient private val victimIdx: Int)
-  extends Serializable {
-  def this() = this(HashMap.empty, 0)
+trait CuckooTable extends Serializable {
+  def sizeAt(i: Int): Int
 
-  def sizeAt(i: Int): Int = data.get(i) match {
-    case Some(bucket) => bucket.size
-    case None => 0
-  }
+  def containsAt(fp: Byte, i: Int): Boolean
 
-  def containsAt(fp: Byte, i: Int): Boolean = data.get(i) match {
-    case Some(bucket) => bucket.exists(long => CuckooEntry.fromLong(long).fingerprint == fp)
-    case None => false
-  }
+  def filterAt(fp: Byte, i: Int): Seq[Long] = filterAt((e: CuckooEntry) => e.fingerprint == fp, i)
 
-  def swapAt(e: CuckooEntry, i: Int): (CuckooTable, CuckooEntry) = {
-    val bucket = data(i)
-    if (bucket.isEmpty)
-      throw new NoSuchElementException()
-    val newIdx = (this.victimIdx + 1) % bucket.length
-    val oldEntry = CuckooEntry.fromLong(bucket(newIdx))
-    val newBucket = bucket.updated(newIdx, e.toLong)
-    (new CuckooTable(data.updated(i, newBucket), newIdx), oldEntry)
-  }
+  def filterAt(pred: Predicate[CuckooEntry], i: Int): Seq[Long]
 
-  def addAt(e: CuckooEntry, i: Int): CuckooTable = {
-    val newBucket = data.get(i) match {
-      case Some(bucket) => bucket.prepended(e.toLong)
-      case None => Vector(e.toLong)
-    }
-    new CuckooTable(data.updated(i, newBucket), this.victimIdx)
-  }
+  def addAt(e: CuckooEntry, i: Int): CuckooTable
 
-  def removeOnceIfAt(pred: Predicate[CuckooEntry], i: Int): CuckooTable = data.get(i) match {
-    case Some(bucket) => {
-      val idx = bucket.indexWhere(long => pred.test(CuckooEntry.fromLong(long)))
-      if (idx >= 0) {
-        val newData =
-          if (bucket.size == 1) {
-            data.removed(i)
-          } else {
-            data.updated(i, bucket.take(idx) concat bucket.drop(idx + 1))
-          }
-        new CuckooTable(newData, this.victimIdx)
-      } else {
-        this
-      }
-    }
-    case None => this
-  }
+  def replaceAt(e: CuckooEntry, i: Int): (CuckooTable, CuckooEntry)
 
-  def removeIfAt(pred: Predicate[CuckooEntry], i: Int): CuckooTable = data.get(i) match {
-    case Some(bucket) => {
-      val newBucket = bucket.filter(long => !pred.test(CuckooEntry.fromLong(long)))
-      val newData = if (newBucket.isEmpty) data.removed(i) else data.updated(i, newBucket)
-      new CuckooTable(newData, this.victimIdx)
-    }
-    case None => this
-  }
+  def removeIfOnceAt(pred: Predicate[CuckooEntry], i: Int): CuckooTable
 
-  override def toString: String = data.view.map { case (i, v) =>
-    val e = v.view.map(CuckooEntry.fromLong).mkString("[", ",", "]")
-    s"$i->$e"
-  }.mkString("T{", ",", "}")
+  def removeIfAt(pred: Predicate[CuckooEntry], i: Int): CuckooTable
+
+  def iteratorAt(i: Int): Iterator[Long]
 }

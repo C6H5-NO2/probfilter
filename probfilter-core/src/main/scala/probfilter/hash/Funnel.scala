@@ -1,4 +1,4 @@
-package probfilter.pdsa
+package probfilter.hash
 
 
 trait Funnel[T] extends Serializable {
