@@ -6,6 +6,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 
+/**
+ * A mutable collection that accumulates primitive values for hashing.
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class Sink {
     private final PrimitiveSink sink;

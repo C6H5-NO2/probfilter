@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 
+@Deprecated
 public final class PartialOrderOps {
     private PartialOrderOps() {}
 
