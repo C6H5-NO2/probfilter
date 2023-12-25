@@ -18,9 +18,9 @@ object Funnels {
     override def funnel(from: Integer, into: Sink): Unit = into.putInt(from)
   }
 
-  @JavaFriendly("StringFunnel")
-  def stringFunnel(): Funnel[String] = StringFunnel
+  @JavaFriendly(scalaDelegate = "StringFunnel")
+  def getStringFunnel: Funnel[String] = StringFunnel
 
-  @JavaFriendly("IntFunnel")
-  def integerFunnel(): Funnel[Integer] = IntegerFunnel
+  @JavaFriendly(scalaDelegate = "IntFunnel")
+  def getIntegerFunnel: Funnel[Integer] = IntegerFunnel
 }

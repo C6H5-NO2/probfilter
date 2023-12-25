@@ -1,14 +1,18 @@
 package probfilter.pdsa
 
 import probfilter.hash.{Funnel, MurmurHash3}
+import probfilter.util.JavaFriendly
 
 import java.util.{Iterator => JavaIterator}
 import scala.collection.AbstractIterator
 
 
 @SerialVersionUID(1L)
-class BloomStrategy[T](val numBits: Int, val numHashes: Int)
-                      (implicit val funnel: Funnel[_ >: T]) extends Serializable {
+class BloomStrategy[T](val numBits: Int, val numHashes: Int)(implicit val funnel: Funnel[_ >: T])
+  extends Serializable {
+  /**
+   * Returns an iterator over the indices corresponding to `elem`.
+   */
   def iterator(elem: T): Iterator[Int] = {
     val hash = MurmurHash3.hash(elem)
     val hash1 = hash.toInt
@@ -28,6 +32,7 @@ class BloomStrategy[T](val numBits: Int, val numHashes: Int)
     }
   }
 
+  @JavaFriendly(scalaDelegate = "iterator")
   def iteratorAsJava(elem: T): JavaIterator[Integer] = new JavaIterator[Integer] {
     private val scalaIterator = iterator(elem)
 
@@ -39,6 +44,12 @@ class BloomStrategy[T](val numBits: Int, val numHashes: Int)
 
 
 object BloomStrategy {
+  /**
+   * @param fpp false positive possibility between 0 and 1
+   * @param capacity expected number of elements to be inserted
+   * @param funnel the funnel object to use
+   * @throws IllegalArgumentException if any parameter is out of range
+   */
   def create[T](fpp: Double, capacity: Int)(implicit funnel: Funnel[_ >: T]): BloomStrategy[T] = {
     require(fpp > 0 && fpp < 1, s"BloomStrategy.create: fpp = $fpp not in (0, 1)")
     require(capacity > 0, s"BloomStrategy.create: capacity = $fpp not > 0")
