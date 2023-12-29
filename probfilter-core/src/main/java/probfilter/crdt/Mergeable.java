@@ -1,4 +1,4 @@
-package probfilter.util;
+package probfilter.crdt;
 
 
 public interface Mergeable<T> {

@@ -1,7 +1,7 @@
 package probfilter.crdt
 
+import probfilter.util.UnsignedNumber
 import probfilter.util.UnsignedVal._
-import probfilter.util.{Mergeable, UnsignedNumber}
 
 import scala.collection.immutable.TreeMap
 
@@ -10,7 +10,7 @@ import scala.collection.immutable.TreeMap
  * An immutable vector clock.
  */
 @SerialVersionUID(1L)
-class VectorClock private(private val clock: TreeMap[Short, Int]) extends Mergeable[VectorClock] with Serializable {
+final class VectorClock private(private val clock: TreeMap[Short, Int]) extends Mergeable[VectorClock] with Serializable {
   def this() = this(new TreeMap[Short, Int]()((x, y) => UnsignedNumber.compare(x, y)))
 
   /**

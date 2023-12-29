@@ -8,7 +8,7 @@ import scala.collection.AbstractIterator
 
 
 @SerialVersionUID(1L)
-class BloomStrategy[T](val numBits: Int, val numHashes: Int)(implicit val funnel: Funnel[_ >: T])
+class BloomStrategy[T] private(val numBits: Int, val numHashes: Int)(implicit val funnel: Funnel[_ >: T])
   extends Serializable {
   /**
    * Returns an iterator over the indices corresponding to `elem`.
@@ -45,18 +45,18 @@ class BloomStrategy[T](val numBits: Int, val numHashes: Int)(implicit val funnel
 
 object BloomStrategy {
   /**
-   * @param fpp false positive possibility between 0 and 1
    * @param capacity expected number of elements to be inserted
+   * @param fpp false positive possibility between 0 and 1
    * @param funnel the funnel object to use
    * @throws IllegalArgumentException if any parameter is out of range
    */
-  def create[T](fpp: Double, capacity: Int)(implicit funnel: Funnel[_ >: T]): BloomStrategy[T] = {
-    require(fpp > 0 && fpp < 1, s"BloomStrategy.create: fpp = $fpp not in (0, 1)")
-    require(capacity > 0, s"BloomStrategy.create: capacity = $fpp not > 0")
+  def create[T](capacity: Int, fpp: Double)(implicit funnel: Funnel[_ >: T]): BloomStrategy[T] = {
+    require(capacity > 0, s"BloomStrategy.create: capacity = $capacity not > 0")
+    require(0 < fpp && fpp < 1, s"BloomStrategy.create: fpp = $fpp not in (0, 1)")
     val m = optimalBits(fpp, capacity)
-    require(m > 0 && m < Int.MaxValue, s"BloomStrategy.create: optimalBits = $m too large")
+    require(0 < m && m < Int.MaxValue, s"BloomStrategy.create: optimalBits = $m too large")
     val h = optimalHashes(fpp)
-    require(h > 0 && h < Byte.MaxValue, s"BloomStrategy.create: optimalHashes = $h too large")
+    require(0 < h && h < Byte.MaxValue, s"BloomStrategy.create: optimalHashes = $h too large")
     new BloomStrategy[T](m, h)
   }
 
