@@ -1,7 +1,7 @@
 package probfilter.crdt.immutable
 
 import probfilter.crdt.{BaseFilter, VectorClock}
-import probfilter.pdsa.{CuckooEntry, CuckooStrategy, LongCuckooTable, LongMapCuckooTable}
+import probfilter.pdsa.{CuckooEntry, CuckooStrategy, LongCuckooTable, MapLongCuckooTable}
 import probfilter.util.UnsignedVal._
 
 import scala.util.control.Breaks.{break, breakable}
@@ -15,7 +15,7 @@ final class AWCuckooFilter[T] private(
   val strategy: CuckooStrategy[T], val sid: Short, val clock: VectorClock, val data: LongCuckooTable
 ) extends BaseFilter[T, AWCuckooFilter[T]] {
   def this(strategy: CuckooStrategy[T], sid: Short) = {
-    this(strategy, sid, new VectorClock(), new LongMapCuckooTable())
+    this(strategy, sid, new VectorClock(), new MapLongCuckooTable())
   }
 
   override def mightContains(elem: T): Boolean = {
@@ -28,9 +28,9 @@ final class AWCuckooFilter[T] private(
 
     // check whether the two candidate buckets are saturated
     if (data.at(triple.i).size > strategy.bucketSize)
-      throw new AWCuckooFilter.BucketSaturatedException(elem, triple.i)
+      throw new CuckooStrategy.BucketSaturatedException(elem, triple.i)
     if (data.at(triple.j).size > strategy.bucketSize)
-      throw new AWCuckooFilter.BucketSaturatedException(elem, triple.j)
+      throw new CuckooStrategy.BucketSaturatedException(elem, triple.j)
 
     val newEntry = CuckooEntry.of(triple.fp, this.sid, this.clock.get(this.sid) + 1)
     var newData = data.at(triple.i).remove(triple.fp).at(triple.j).remove(triple.fp)
@@ -57,14 +57,14 @@ final class AWCuckooFilter[T] private(
       val bucket = newData.at(idx)
       val size = bucket.size
       if (size > strategy.bucketSize)
-        throw new AWCuckooFilter.BucketSaturatedException(elem, idx)
+        throw new CuckooStrategy.BucketSaturatedException(elem, idx)
       if (size < strategy.bucketSize) {
         newData = bucket.add(swappedEntries)
         return new AWCuckooFilter[T](this.strategy, this.sid, this.clock.inc(this.sid), newData)
       }
     }
 
-    throw new AWCuckooFilter.MaxIterationReachedException(elem)
+    throw new CuckooStrategy.MaxIterationReachedException(elem)
   }
 
   override def remove(elem: T): AWCuckooFilter[T] = {
@@ -74,9 +74,10 @@ final class AWCuckooFilter[T] private(
   }
 
   override def merge(that: AWCuckooFilter[T]): AWCuckooFilter[T] = {
-    import scala.collection.{immutable, mutable}
+    import scala.collection.immutable.{HashMap => ImmuHashMap}
+    import scala.collection.mutable.{ArrayBuffer, HashMap => MuHashMap}
 
-    val newData = mutable.HashMap.empty[Int, mutable.ArrayBuffer[Long]]
+    val newData = MuHashMap.empty[Int, ArrayBuffer[Long]]
 
     // merge entries
     for (i <- 0 until strategy.numBuckets) {
@@ -91,7 +92,7 @@ final class AWCuckooFilter[T] private(
           val thatEntries =
             if (i != j) that.data.at(i).get(fp) concat that.data.at(j).get(fp) else that.data.at(i).get(fp)
 
-          val buffer = mutable.ArrayBuffer.empty[Long]
+          val buffer = ArrayBuffer.empty[Long]
           buffer.addAll(thisEntries intersect thatEntries)
           buffer.addAll(thisEntries diff thatEntries filter { long =>
             val e = CuckooEntry.of(long)
@@ -102,7 +103,7 @@ final class AWCuckooFilter[T] private(
             e.timestamp gtu this.clock.get(e.replicaId)
           })
 
-          newData.getOrElseUpdate(i, mutable.ArrayBuffer.empty).addAll(buffer)
+          newData.getOrElseUpdate(i, ArrayBuffer.empty).addAll(buffer)
         }
       }
     }
@@ -120,12 +121,12 @@ final class AWCuckooFilter[T] private(
       if (size <= strategy.bucketSize)
         break()
 
-      val swappedFps = mutable.ArrayBuffer.empty[Byte]
+      val swappedFps = ArrayBuffer.empty[Byte]
       breakable {
         groups.foreachEntry { (fp, ar) =>
           val j = strategy.getAltBucket(fp, i)
           if (j != i) {
-            newData.getOrElseUpdate(j, mutable.ArrayBuffer.empty).addAll(ar).sortInPlace()
+            newData.getOrElseUpdate(j, ArrayBuffer.empty).addAll(ar).sortInPlace()
             swappedFps.addOne(fp)
             if (size - swappedFps.size <= strategy.bucketSize)
               break()
@@ -136,16 +137,7 @@ final class AWCuckooFilter[T] private(
       buffer.filterInPlace(long => !swappedFps.contains(CuckooEntry.of(long).fingerprint))
     }
 
-    val imData = newData.view.mapValues(_.toArray).to(immutable.HashMap)
-    new AWCuckooFilter[T](this.strategy, this.sid, this.clock merge that.clock, new LongMapCuckooTable(imData))
+    val immuData = newData.view.mapValues(_.toArray).to(ImmuHashMap)
+    new AWCuckooFilter[T](this.strategy, this.sid, this.clock merge that.clock, new MapLongCuckooTable(immuData))
   }
-}
-
-
-object AWCuckooFilter {
-  class BucketSaturatedException(elem: Any, i: Int)
-    extends RuntimeException(s"Found saturated bucket at $i when trying to add $elem")
-
-  class MaxIterationReachedException(elem: Any)
-    extends RuntimeException(s"Reached maximum number of iterations when trying to add $elem")
 }

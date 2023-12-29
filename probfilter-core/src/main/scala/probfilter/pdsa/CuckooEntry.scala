@@ -28,7 +28,7 @@ final class CuckooEntry(private val data: Long) extends AnyVal {
 
   @inline def tryCompareTo(that: CuckooEntry): Option[Int] = CuckooEntry.Ordering.tryCompare(data, that.toLong)
 
-  @JavaFriendly(scalaDelegate = "tryCompareTo")
+  @JavaFriendly(scalaDelegate = "probfilter.pdsa.CuckooEntry::tryCompareTo")
   def tryCompareToAsJava(that: CuckooEntry): OptionalInt = {
     import scala.jdk.OptionConverters.RichOption
     tryCompareTo(that).toJavaPrimitive[OptionalInt]

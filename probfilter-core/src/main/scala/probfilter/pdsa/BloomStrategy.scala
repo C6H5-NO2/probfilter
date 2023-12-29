@@ -32,7 +32,7 @@ class BloomStrategy[T] private(val numBits: Int, val numHashes: Int)(implicit va
     }
   }
 
-  @JavaFriendly(scalaDelegate = "iterator")
+  @JavaFriendly(scalaDelegate = "probfilter.pdsa.BloomStrategy::iterator")
   def iteratorAsJava(elem: T): JavaIterator[Integer] = new JavaIterator[Integer] {
     private val scalaIterator = iterator(elem)
 

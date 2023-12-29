@@ -1,5 +1,7 @@
 package probfilter.pdsa;
 
+import probfilter.util.JavaFriendly;
+import probfilter.util.Pair;
 import scala.Tuple2;
 
 import java.util.stream.LongStream;
@@ -33,7 +35,7 @@ public interface LongCuckooBucket {
      * @return an array of entries in both buckets
      */
     default long[] concat(LongCuckooBucket that) {
-        return LongStream.concat(this.stream(), that.stream()).toArray();
+        return LongStream.concat(this.stream(), that.stream()).distinct().toArray();
     }
 
     /**
@@ -59,4 +61,10 @@ public interface LongCuckooBucket {
      * @throws java.util.NoSuchElementException if this bucket is empty
      */
     Tuple2<LongCuckooTable, long[]> replace(long[] longs);
+
+    @JavaFriendly(scalaDelegate = "probfilter.pdsa.LongCuckooBucket::replace")
+    default Pair<LongCuckooTable, long[]> replaceAsJava(long[] longs) {
+        var tuple = replace(longs);
+        return new Pair<>(tuple._1, tuple._2);
+    }
 }

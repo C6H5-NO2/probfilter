@@ -24,9 +24,9 @@ object Funnels {
     override def funnel(from: Integer, into: Sink): Unit = into.putInt(from)
   }
 
-  @JavaFriendly(scalaDelegate = "StringFunnel")
+  @JavaFriendly(scalaDelegate = "probfilter.hash.Funnels.StringFunnel")
   def getStringFunnel: Funnel[String] = StringFunnel
 
-  @JavaFriendly(scalaDelegate = "IntFunnel")
+  @JavaFriendly(scalaDelegate = "probfilter.hash.Funnels.IntFunnel")
   def getIntegerFunnel: Funnel[Integer] = IntegerFunnel
 }

@@ -7,10 +7,10 @@ import scala.collection.immutable.HashMap
 /**
  * A [[probfilter.pdsa.LongCuckooTable]] based on [[scala.collection.immutable.HashMap]].
  *
- * @todo Provide also a more compact `LongArrayCuckooTable` based on `Array[Long]`
+ * @todo Provide also a more compact `ArrayLongCuckooTable` based on `Array[Long]`
  */
 @SerialVersionUID(1L)
-final class LongMapCuckooTable private(
+final class MapLongCuckooTable private(
   private val data: HashMap[Int, Array[Long]], @transient private val victimIdx: Int
 ) extends LongCuckooTable {
   def this() = this(HashMap.empty, 0)
@@ -18,7 +18,7 @@ final class LongMapCuckooTable private(
   def this(data: HashMap[Int, Array[Long]]) = this(data, 0)
 
   override def at(i: Int): LongCuckooBucket = {
-    new LongMapCuckooTable.LongMapCuckooBucket1(this, i)
+    new MapLongCuckooTable.MapLongCuckooBucket1(this, i)
   }
 
   override def toString: String = data.view.map { case (i, v) =>
@@ -28,8 +28,8 @@ final class LongMapCuckooTable private(
 }
 
 
-object LongMapCuckooTable {
-  private final class LongMapCuckooBucket1(private val table: LongMapCuckooTable, private val i: Int)
+object MapLongCuckooTable {
+  private final class MapLongCuckooBucket1(private val table: MapLongCuckooTable, private val i: Int)
     extends LongCuckooBucket {
     override def size(): Int = {
       table.data.get(i).fold(0)(_.distinctBy(CuckooEntry.of(_).fingerprint).length)
@@ -50,19 +50,19 @@ object LongMapCuckooTable {
     override def add(long$: Long): LongCuckooTable = {
       val newBucket = table.data.get(i).fold(Array.apply(long$))(_.appended(long$).sorted)
       val newData = table.data.updated(i, newBucket)
-      new LongMapCuckooTable(newData, table.victimIdx)
+      new MapLongCuckooTable(newData, table.victimIdx)
     }
 
     override def add(longs: Array[Long]): LongCuckooTable = {
       val newBucket = table.data.get(i).fold(longs.sorted)(_.appendedAll(longs).sorted)
       val newData = table.data.updated(i, newBucket)
-      new LongMapCuckooTable(newData, table.victimIdx)
+      new MapLongCuckooTable(newData, table.victimIdx)
     }
 
     override def remove(fp: Byte): LongCuckooTable = table.data.get(i).fold(table) { bucket =>
       val newBucket = bucket.filter(CuckooEntry.of(_).fingerprint != fp)
       val newData = if (newBucket.isEmpty) table.data.removed(i) else table.data.updated(i, newBucket)
-      new LongMapCuckooTable(newData, table.victimIdx)
+      new MapLongCuckooTable(newData, table.victimIdx)
     }
 
     override def replace(longs: Array[Long]): (LongCuckooTable, Array[Long]) = {
@@ -77,7 +77,7 @@ object LongMapCuckooTable {
       val (swapped, kept) = bucket.partition(CuckooEntry.of(_).fingerprint == victimFp)
       val newBucket = kept.appendedAll(longs).sorted
       val newData = table.data.updated(i, newBucket)
-      (new LongMapCuckooTable(newData, victimIdx), swapped)
+      (new MapLongCuckooTable(newData, victimIdx), swapped)
     }
   }
 }

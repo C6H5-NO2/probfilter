@@ -1,13 +1,14 @@
 package probfilter.util;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 
 /**
- * Indicates that this Scala function is (more) suitable for being used from Java than its equivalent.
+ * Indicates that this Scala element is (more) suitable for being used from Java than its equivalent.
  */
-@Target({ElementType.METHOD})
+@Documented
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.SOURCE)
 public @interface JavaFriendly {
     String scalaDelegate() default "";
 }

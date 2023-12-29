@@ -61,6 +61,14 @@ object CuckooStrategy {
   }
 
 
+  final class BucketSaturatedException(private val elem: Any, private val i: Int)
+    extends RuntimeException(s"Found saturated bucket at $i when trying to add $elem")
+
+
+  final class MaxIterationReachedException(private val elem: Any)
+    extends RuntimeException(s"Reached maximum number of iterations when trying to add $elem")
+
+
   /**
    * @param capacity expected number of elements to be inserted
    * @param bucketSize number of slots per bucket
