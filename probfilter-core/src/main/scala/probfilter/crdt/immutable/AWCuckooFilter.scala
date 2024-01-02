@@ -28,9 +28,9 @@ final class AWCuckooFilter[T] private(
 
     // check whether the two candidate buckets are saturated
     if (data.at(triple.i).size > strategy.bucketSize)
-      throw new CuckooStrategy.BucketSaturatedException(elem, triple.i)
+      throw new CuckooStrategy.BucketOverflowException(elem, triple.i)
     if (data.at(triple.j).size > strategy.bucketSize)
-      throw new CuckooStrategy.BucketSaturatedException(elem, triple.j)
+      throw new CuckooStrategy.BucketOverflowException(elem, triple.j)
 
     val newEntry = CuckooEntry.of(triple.fp, this.sid, this.clock.get(this.sid) + 1)
     var newData = data.at(triple.i).remove(triple.fp).at(triple.j).remove(triple.fp)
@@ -57,7 +57,7 @@ final class AWCuckooFilter[T] private(
       val bucket = newData.at(idx)
       val size = bucket.size
       if (size > strategy.bucketSize)
-        throw new CuckooStrategy.BucketSaturatedException(elem, idx)
+        throw new CuckooStrategy.BucketOverflowException(elem, idx)
       if (size < strategy.bucketSize) {
         newData = bucket.add(swappedEntries)
         return new AWCuckooFilter[T](this.strategy, this.sid, this.clock.inc(this.sid), newData)

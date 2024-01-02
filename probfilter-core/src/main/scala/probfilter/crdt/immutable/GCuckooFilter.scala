@@ -25,10 +25,10 @@ final class GCuckooFilter[T] private(val strategy: CuckooStrategy[T], val data: 
     // check whether the two candidate buckets are saturated
     val sizeAtI = data.at(triple.i).size
     if (sizeAtI > strategy.bucketSize)
-      throw new CuckooStrategy.BucketSaturatedException(elem, triple.i)
+      throw new CuckooStrategy.BucketOverflowException(elem, triple.i)
     val sizeAtJ = data.at(triple.j).size
     if (sizeAtJ > strategy.bucketSize)
-      throw new CuckooStrategy.BucketSaturatedException(elem, triple.j)
+      throw new CuckooStrategy.BucketOverflowException(elem, triple.j)
 
     if (mightContains(elem))
       return this
@@ -55,7 +55,7 @@ final class GCuckooFilter[T] private(val strategy: CuckooStrategy[T], val data: 
       val bucket = newData.at(idx)
       val size = bucket.size
       if (size > strategy.bucketSize)
-        throw new CuckooStrategy.BucketSaturatedException(elem, idx)
+        throw new CuckooStrategy.BucketOverflowException(elem, idx)
       if (size < strategy.bucketSize) {
         newData = bucket.add(swappedFp)
         return new GCuckooFilter[T](this.strategy, newData)
