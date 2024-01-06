@@ -28,7 +28,7 @@ public class ReplicatedFilter implements ReplicatedData, Serializable {
     }
 
     public boolean contains(Object elem) {
-        return filter.mightContains(elem);
+        return filter.contains(elem);
     }
 
     public ReplicatedFilter add(Object elem) {

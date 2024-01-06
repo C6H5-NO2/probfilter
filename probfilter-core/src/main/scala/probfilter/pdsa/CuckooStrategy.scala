@@ -6,8 +6,10 @@ import probfilter.util.UnsignedNumber
 
 
 @SerialVersionUID(1L)
-class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int)
+class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int)
                                (implicit val funnel: Funnel[_ >: T]) extends Serializable {
+  val fpp: Double = 2.0 * bucketSize / (1 << 8)
+
   /**
    * @return `fp = fingerprint(elem); i = hash(elem)`
    */
@@ -40,7 +42,19 @@ class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val ma
 
 object CuckooStrategy {
   final class Pair(val fp: Byte, val i: Int)
-  final class Triple(val fp: Byte, val i: Int, val j: Int)
+
+
+  final class Triple(val fp: Byte, val i: Int, val j: Int) {
+    override def equals(obj: Any): Boolean = obj match {
+      case obj: Triple => fp == obj.fp && i == obj.i && j == obj.j
+      case obj: (Int, Int, Int) => UnsignedNumber.toUInt(fp) == obj._1 && i == obj._2 && j == obj._3
+      case _ => false
+    }
+
+    override def hashCode(): Int = java.util.Objects.hash(fp, i, j)
+
+    override def toString: String = s"(${UnsignedNumber.toString(fp)}, $i, $j)"
+  }
 
 
   /**
@@ -87,6 +101,6 @@ object CuckooStrategy {
       case _: IllegalArgumentException | _: ArithmeticException =>
         throw new IllegalArgumentException(s"CuckooStrategy.create: capacity/bucketSize = ${capacity / bucketSize}")
     }
-    new CuckooStrategy[T](numBuckets, bucketSize, maxIterations)(funnel)
+    new CuckooStrategy[T](numBuckets, bucketSize, maxIterations, capacity)(funnel)
   }
 }

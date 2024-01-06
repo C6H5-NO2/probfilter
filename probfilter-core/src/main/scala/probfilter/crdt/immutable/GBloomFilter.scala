@@ -14,7 +14,7 @@ final class GBloomFilter[T] private(val strategy: BloomStrategy[T], val data: Bi
   extends BaseFilter[T, GBloomFilter[T]] {
   def this(strategy: BloomStrategy[T]) = this(strategy, BitSet.empty)
 
-  override def mightContains(elem: T): Boolean = {
+  override def mightContain(elem: T): Boolean = {
     strategy.iterator(elem).forall(data.contains)
   }
 

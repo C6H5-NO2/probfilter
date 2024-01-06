@@ -14,7 +14,7 @@ final class GCuckooFilter[T] private(val strategy: CuckooStrategy[T], val data: 
   extends BaseFilter[T, GCuckooFilter[T]] {
   def this(strategy: CuckooStrategy[T]) = this(strategy, new MapByteCuckooTable())
 
-  override def mightContains(elem: T): Boolean = {
+  override def mightContain(elem: T): Boolean = {
     val triple = strategy.getCuckooTriple(elem)
     data.at(triple.i).contains(triple.fp) || data.at(triple.j).contains(triple.fp)
   }
@@ -30,7 +30,7 @@ final class GCuckooFilter[T] private(val strategy: CuckooStrategy[T], val data: 
     if (sizeAtJ > strategy.bucketSize)
       throw new CuckooStrategy.BucketOverflowException(elem, triple.j)
 
-    if (mightContains(elem))
+    if (mightContain(elem))
       return this
 
     // if either of the candidate buckets has empty slot

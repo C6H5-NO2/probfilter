@@ -18,7 +18,7 @@ final class AWCuckooFilter[T] private(
     this(strategy, sid, new VectorClock(), new MapLongCuckooTable())
   }
 
-  override def mightContains(elem: T): Boolean = {
+  override def mightContain(elem: T): Boolean = {
     val triple = strategy.getCuckooTriple(elem)
     data.at(triple.i).contains(triple.fp) || data.at(triple.j).contains(triple.fp)
   }

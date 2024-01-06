@@ -8,8 +8,8 @@ import scala.collection.AbstractIterator
 
 
 @SerialVersionUID(1L)
-class BloomStrategy[T] private(val numBits: Int, val numHashes: Int)(implicit val funnel: Funnel[_ >: T])
-  extends Serializable {
+class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacity: Int, val fpp: Double)
+                              (implicit val funnel: Funnel[_ >: T]) extends Serializable {
   /**
    * Returns an iterator over the indices corresponding to `elem`.
    */
@@ -46,7 +46,7 @@ class BloomStrategy[T] private(val numBits: Int, val numHashes: Int)(implicit va
 object BloomStrategy {
   /**
    * @param capacity expected number of elements to be inserted
-   * @param fpp false positive possibility between 0 and 1
+   * @param fpp expected false positive possibility between 0 and 1
    * @param funnel the funnel object to use
    * @throws IllegalArgumentException if any parameter is out of range
    */
@@ -57,7 +57,7 @@ object BloomStrategy {
     require(0 < m && m < Int.MaxValue, s"BloomStrategy.create: optimalBits = $m too large")
     val h = optimalHashes(fpp)
     require(0 < h && h < Byte.MaxValue, s"BloomStrategy.create: optimalHashes = $h too large")
-    new BloomStrategy[T](m, h)
+    new BloomStrategy[T](m, h, capacity, fpp)
   }
 
   private val ln2: Double = math.log(2)

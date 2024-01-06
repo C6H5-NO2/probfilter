@@ -5,7 +5,7 @@ import akka.cluster.ddata.Replicator
 
 
 object Messages {
-  /** @note package private */
+  /** @note package-private */
   sealed trait Message
 
   sealed trait Request extends Message
@@ -13,7 +13,7 @@ object Messages {
   final case class Add(elem: Any, replyTo: ActorRef[AddResponse]) extends Request
   final case class Remove(elem: Any, replyTo: ActorRef[RemoveResponse]) extends Request
 
-  /** @note package private */
+  /** @note package-private */
   sealed trait InternalResponse extends Message
   final case class InternalContainsResponse(rsp: Replicator.GetResponse[ReplicatedFilter], req: Contains)
     extends InternalResponse
