@@ -1,6 +1,7 @@
 package probfilter.crdt.immutable
 
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import probfilter.crdt.immutable.BaseFilterTests.BaseFilterOps
 import probfilter.hash.Funnels.IntFunnel
 import probfilter.pdsa.CuckooStrategy
@@ -9,7 +10,7 @@ import probfilter.util.LazyString
 import scala.util.Random
 
 
-class AWCuckooFilterTest extends AnyFunSuite {
+class AWCuckooFilterTest extends AnyFunSuite with Matchers {
   private val strategy = CuckooStrategy.create(1e4.toInt, 2, 20)
 
   test("AWCuckooFilter should contain added elements") {
@@ -26,14 +27,27 @@ class AWCuckooFilterTest extends AnyFunSuite {
 
   test("AWCuckooFilter should contain all elements after merged") {
     BaseFilterTests.testMerge(
-      new AWCuckooFilter(strategy, 1), new AWCuckooFilter(strategy, 2),
-      strategy.capacity, strategy.fpp
+      new AWCuckooFilter(strategy, 1), new AWCuckooFilter(strategy, 2), strategy.capacity, strategy.fpp
     )(this)
   }
 
   test("AWCuckooFilter should abort `add` when overflowed") {
     val sid = (1 to 2).iterator
     CuckooFilterTests.testAddOverflowed(st => new AWCuckooFilter(st, sid.next().toShort))(this)
+  }
+
+  test("AWCuckooFilter should resemble a (non-multi) set") {
+    val rnd = new Random()
+    val e = rnd.nextInt()
+    var filter = new AWCuckooFilter(strategy, 0)
+    noException should be thrownBy {
+      for (_ <- 0 until (strategy.bucketSize * 2 * 10)) {
+        filter = filter.add(e)
+      }
+    }
+    assert(filter.contains(e))
+    filter = filter.remove(e)
+    assert(!filter.contains(e))
   }
 
   private def concurrentFixture = {
