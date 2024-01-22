@@ -1,6 +1,6 @@
 package probfilter.crdt.immutable
 
-import probfilter.crdt.{BaseFilter, VectorClock}
+import probfilter.crdt.BaseFilter
 import probfilter.pdsa.{CuckooEntry, CuckooStrategy, LongCuckooTable, MapLongCuckooTable}
 import probfilter.util.UnsignedVal._
 
@@ -12,10 +12,10 @@ import scala.util.control.Breaks.{break, breakable}
  */
 @SerialVersionUID(1L)
 final class AWCuckooFilter[T] private(
-  val strategy: CuckooStrategy[T], val sid: Short, val clock: VectorClock, val data: LongCuckooTable
+  val strategy: CuckooStrategy[T], val sid: Short, val version: VersionVector, val data: LongCuckooTable
 ) extends BaseFilter[T, AWCuckooFilter[T]] {
   def this(strategy: CuckooStrategy[T], sid: Short) = {
-    this(strategy, sid, new VectorClock(), new MapLongCuckooTable())
+    this(strategy, sid, new VersionVector(), new MapLongCuckooTable())
   }
 
   override def mightContain(elem: T): Boolean = {
@@ -32,17 +32,17 @@ final class AWCuckooFilter[T] private(
     if (data.at(triple.j).size > strategy.bucketSize)
       throw new CuckooStrategy.BucketOverflowException(elem, triple.j)
 
-    val newEntry = CuckooEntry.of(triple.fp, this.sid, this.clock.get(this.sid) + 1)
+    val newEntry = CuckooEntry.of(triple.fp, this.sid, this.version.get(this.sid) + 1)
     var newData = data.at(triple.i).remove(triple.fp).at(triple.j).remove(triple.fp)
 
     // if either of the candidate buckets has empty slot
     if (newData.at(triple.i).size < strategy.bucketSize) {
       newData = newData.at(triple.i).add(newEntry.toLong)
-      return new AWCuckooFilter[T](this.strategy, this.sid, this.clock.inc(this.sid), newData)
+      return new AWCuckooFilter[T](this.strategy, this.sid, this.version.inc(this.sid), newData)
     }
     if (newData.at(triple.j).size < strategy.bucketSize) {
       newData = newData.at(triple.j).add(newEntry.toLong)
-      return new AWCuckooFilter[T](this.strategy, this.sid, this.clock.inc(this.sid), newData)
+      return new AWCuckooFilter[T](this.strategy, this.sid, this.version.inc(this.sid), newData)
     }
 
     // cuckoo displacement
@@ -60,7 +60,7 @@ final class AWCuckooFilter[T] private(
         throw new CuckooStrategy.BucketOverflowException(elem, idx)
       if (size < strategy.bucketSize) {
         newData = bucket.add(swappedEntries)
-        return new AWCuckooFilter[T](this.strategy, this.sid, this.clock.inc(this.sid), newData)
+        return new AWCuckooFilter[T](this.strategy, this.sid, this.version.inc(this.sid), newData)
       }
     }
 
@@ -70,7 +70,7 @@ final class AWCuckooFilter[T] private(
   override def remove(elem: T): AWCuckooFilter[T] = {
     val triple = strategy.getCuckooTriple(elem)
     val newData = data.at(triple.i).remove(triple.fp).at(triple.j).remove(triple.fp)
-    new AWCuckooFilter[T](this.strategy, this.sid, this.clock, newData)
+    new AWCuckooFilter[T](this.strategy, this.sid, this.version, newData)
   }
 
   override def merge(that: AWCuckooFilter[T]): AWCuckooFilter[T] = {
@@ -96,11 +96,11 @@ final class AWCuckooFilter[T] private(
           buffer.addAll(thisEntries intersect thatEntries)
           buffer.addAll(thisEntries diff thatEntries filter { long =>
             val e = CuckooEntry.of(long)
-            e.timestamp gtu that.clock.get(e.replicaId)
+            e.timestamp gtu that.version.get(e.replicaId)
           })
           buffer.addAll(thatEntries diff thisEntries filter { long =>
             val e = CuckooEntry.of(long)
-            e.timestamp gtu this.clock.get(e.replicaId)
+            e.timestamp gtu this.version.get(e.replicaId)
           })
 
           newData.getOrElseUpdate(i, ArrayBuffer.empty).addAll(buffer)
@@ -138,6 +138,7 @@ final class AWCuckooFilter[T] private(
     }
 
     val immuData = newData.view.mapValues(_.toArray).to(ImmuHashMap)
-    new AWCuckooFilter[T](this.strategy, this.sid, this.clock merge that.clock, new MapLongCuckooTable(immuData))
+    val table = new MapLongCuckooTable(immuData)
+    new AWCuckooFilter[T](this.strategy, this.sid, this.version merge that.version, table)
   }
 }
