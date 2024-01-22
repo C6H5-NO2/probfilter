@@ -11,20 +11,19 @@ import java.util.OptionalInt
  * This class is also a value class which avoids runtime object allocation.
  */
 final class CuckooEntry(private val data: Long) extends AnyVal {
-  /**
-   * @return 8-bit unsigned fingerprint
-   */
+  /** @return 8-bit unsigned fingerprint */
   @inline def fingerprint: Byte = ((data >>> 48) & 0xffL).toByte
 
-  /**
-   * @return 16-bit unsigned replica id
-   */
+  /** @return 16-bit unsigned replica id */
   @inline def replicaId: Short = ((data >>> 32) & 0xffffL).toShort
 
-  /**
-   * @return 32-bit unsigned timestamp
-   */
+  /** @return 32-bit unsigned timestamp */
   @inline def timestamp: Int = (data & 0xffff_ffffL).toInt
+
+  @inline def isTombstone: Boolean = (data & (1L << 62)) != 0
+
+  @inline def withTombstone(flag: Boolean): CuckooEntry =
+    new CuckooEntry(if (flag) data | (1L << 62) else data & ~(1L << 62))
 
   @inline def tryCompareTo(that: CuckooEntry): Option[Int] = CuckooEntry.Ordering.tryCompare(data, that.toLong)
 
@@ -34,15 +33,11 @@ final class CuckooEntry(private val data: Long) extends AnyVal {
     tryCompareTo(that).toJavaPrimitive[OptionalInt]
   }
 
-  /**
-   * @return `true` if `this` is partially less than `that`; `false` otherwise
-   */
+  /** @return `true` if `this` is partially less than `that`; `false` otherwise */
   @inline def lt(that: CuckooEntry): Boolean =
     ((data >>> 32) == (that.toLong >>> 32)) && (UnsignedNumber.compare(data, that.toLong) < 0)
 
-  /**
-   * @return `true` if `this` is partially greater than `that`; `false` otherwise
-   */
+  /** @return `true` if `this` is partially greater than `that`; `false` otherwise */
   @inline def gt(that: CuckooEntry): Boolean =
     ((data >>> 32) == (that.toLong >>> 32)) && (UnsignedNumber.compare(data, that.toLong) > 0)
 
@@ -54,9 +49,7 @@ final class CuckooEntry(private val data: Long) extends AnyVal {
 
 
 object CuckooEntry {
-  /**
-   * @see [[probfilter.pdsa.CuckooEntry.of]]
-   */
+  /** @see [[probfilter.pdsa.CuckooEntry.of]] */
   @inline def parse(fingerprint: Byte, replicaId: Short, timestamp: Int): Long = {
     val fp = (fingerprint.toLong & 0xffL) << 48
     val id = (replicaId.toLong & 0xffffL) << 32
