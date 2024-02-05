@@ -23,7 +23,15 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
   ),
   assemblyShadeRules ++= Seq(
     ShadeRule.rename("com.google.**" -> "probfilter.shaded.@0").inAll
-  )
+  ),
+  // assemblyMergeStrategy := {
+  //   case PathList("javax", _*) => MergeStrategy.discard
+  //   case PathList("org", "checkerframework", _*) => MergeStrategy.discard
+  //   case x =>
+  //     val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
+  //     oldStrategy(x)
+  // },
+  // assembly / assemblyOption ~= {_.withIncludeScala(false)}
 )
 
 lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(
