@@ -1,31 +1,27 @@
 package probfilter.pdsa
 
 import com.google.common.math.IntMath
-import probfilter.hash.{Funnel, MurmurHash3}
+import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 import probfilter.util.UnsignedNumber
 
 
 @SerialVersionUID(1L)
-class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int)
+class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int, val fpBits: Int)
                                (implicit val funnel: Funnel[_ >: T]) extends Serializable {
-  val fpp: Double = 2.0 * bucketSize / (1 << 8)
+  val fpp: Double = 2.0 * bucketSize / (1 << fpBits)
 
-  /**
-   * @return `fp = fingerprint(elem); i = hash(elem)`
-   */
+  /** @return `fp = fingerprint(elem); i = hash(elem)` */
   def getCuckooPair(elem: T): CuckooStrategy.Pair = {
-    val hash = MurmurHash3.hash(elem)
-    val fp = ((hash >>> 32) % 255 + 1).toByte
-    val i = (hash & Int.MaxValue).toInt % numBuckets
+    // 1 <= fp <= (... 1111 1111)
+    val fp = (FarmHashFingerprint64.hash(elem) % ((1 << fpBits) - 1) + 1).toShort
+    val i = (MurMurHash3.hash(elem) & Int.MaxValue).toInt % numBuckets
     new CuckooStrategy.Pair(fp, i)
   }
 
-  /**
-   * @return `j = i ^ hash(fp)`
-   */
-  def getAltBucket(fp: Byte, i: Int): Int = {
+  /** @return `j = i ^ hash(fp)` */
+  def getAltBucket(fp: Short, i: Int): Int = {
     import probfilter.hash.Funnels.IntFunnel
-    val h = (MurmurHash3.hash(UnsignedNumber.toUInt(fp)) & Int.MaxValue).toInt
+    val h = (MurMurHash3.hash(UnsignedNumber.toUInt(fp))(IntFunnel) & Int.MaxValue).toInt
     (i ^ h) % numBuckets
   }
 
@@ -34,17 +30,36 @@ class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val ma
     new CuckooStrategy.Triple(pair.fp, pair.i, getAltBucket(pair.fp, pair.i))
   }
 
-  def iterator(i: Int): CuckooStrategy.PeekingIterator = {
-    new CuckooStrategy.PeekingIterator(i, this) {}
+  def iterator(i: Int): CuckooStrategy.CuckooIterator = {
+    new CuckooStrategy.CuckooIterator(i, this)
   }
 }
 
 
 object CuckooStrategy {
-  final class Pair(val fp: Byte, val i: Int)
+  /**
+   * @param capacity expected number of elements to be inserted
+   * @param bucketSize desired number of slots per bucket
+   * @param maxIterations maximum number of attempts to cuckoo
+   * @param funnel the funnel object to use
+   * @throws IllegalArgumentException if any parameter is out of range
+   */
+  def create[T](capacity: Int, bucketSize: Int, maxIterations: Int)(implicit funnel: Funnel[_ >: T]): CuckooStrategy[T] = {
+    require(capacity > 0, s"CuckooStrategy.create: capacity = $capacity not > 0")
+    require((1 to 8) contains bucketSize, s"CuckooStrategy.create: bucketSize = $bucketSize !in [1, 8]")
+    require(maxIterations >= 0, s"CuckooStrategy.create: maxIterations = $maxIterations < 0")
+    val numBuckets = try {
+      IntMath.ceilingPowerOfTwo(capacity / bucketSize)
+    } catch {
+      case _: IllegalArgumentException | _: ArithmeticException =>
+        throw new IllegalArgumentException(s"CuckooStrategy.create: capacity/bucketSize = ${capacity / bucketSize}")
+    }
+    new CuckooStrategy[T](numBuckets, bucketSize, maxIterations, capacity, 8)(funnel)
+  }
 
+  final class Pair(val fp: Short, val i: Int)
 
-  final class Triple(val fp: Byte, val i: Int, val j: Int) {
+  final class Triple(val fp: Short, val i: Int, val j: Int) {
     override def equals(obj: Any): Boolean = obj match {
       case obj: Triple => fp == obj.fp && i == obj.i && j == obj.j
       case obj: (Int, Int, Int) => UnsignedNumber.toUInt(fp) == obj._1 && i == obj._2 && j == obj._3
@@ -56,51 +71,26 @@ object CuckooStrategy {
     override def toString: String = s"(${UnsignedNumber.toString(fp)}, $i, $j)"
   }
 
-
-  /**
-   * An iterator that supports `peek`ing the current element.
-   */
-  sealed abstract class PeekingIterator(private var idx: Int, private val strategy: CuckooStrategy[_]) {
+  final class CuckooIterator(private var idx: Int, private val strategy: CuckooStrategy[_]) {
     private var iter = 0
 
     def peek: Int = idx
 
     def hasNext: Boolean = iter < strategy.maxIterations
 
-    def next(fp: Byte): Int = {
+    def next(fp: Short): Int = {
       iter += 1
       idx = strategy.getAltBucket(fp, idx)
       idx
     }
   }
 
-
   final class BucketOverflowException(private val elem: Any, private val i: Int)
     extends RuntimeException(s"Found overflowed bucket at $i when trying to add $elem")
-
 
   final class MaxIterationReachedException(private val elem: Any)
     extends RuntimeException(s"Reached maximum number of iterations when trying to add $elem")
 
-
-  /**
-   * @param capacity expected number of elements to be inserted
-   * @param bucketSize number of slots per bucket
-   * @param maxIterations maximum number of attempts to cuckoo
-   * @param funnel the funnel object to use
-   * @throws IllegalArgumentException if any parameter is out of range
-   */
-  def create[T](capacity: Int, bucketSize: Int, maxIterations: Int)
-               (implicit funnel: Funnel[_ >: T]): CuckooStrategy[T] = {
-    require(capacity > 0, s"CuckooStrategy.create: capacity = $capacity not > 0")
-    require((1 to 4) contains bucketSize, s"CuckooStrategy.create: bucketSize = $bucketSize !in {1, 2, 3, 4}")
-    require(maxIterations >= 0, s"CuckooStrategy.create: maxIterations = $maxIterations < 0")
-    val numBuckets = try {
-      IntMath.ceilingPowerOfTwo(capacity / bucketSize)
-    } catch {
-      case _: IllegalArgumentException | _: ArithmeticException =>
-        throw new IllegalArgumentException(s"CuckooStrategy.create: capacity/bucketSize = ${capacity / bucketSize}")
-    }
-    new CuckooStrategy[T](numBuckets, bucketSize, maxIterations, capacity)(funnel)
-  }
+  final class MaxFingerprintLengthReachedException(private val elem: Any)
+    extends RuntimeException(s"Reached current maximum length of fingerprint (16 bits) when trying to add $elem")
 }

@@ -1,44 +1,18 @@
 package probfilter.pdsa
 
-import probfilter.hash.{Funnel, MurmurHash3}
-import probfilter.util.JavaFriendly
-
-import java.util.{Iterator => JavaIterator}
-import scala.collection.AbstractIterator
+import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 
 
 @SerialVersionUID(1L)
-class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacity: Int, val fpp: Double)
+class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacity: Int, val desiredFpp: Double)
                               (implicit val funnel: Funnel[_ >: T]) extends Serializable {
-  /**
-   * Returns an iterator over the indices corresponding to `elem`.
-   */
+  val fpp: Double = math.pow(-math.expm1(-1.0 * numHashes * capacity / numBits), numHashes)
+
+  /** Returns an iterator over the indices corresponding to `elem`. */
   def iterator(elem: T): Iterator[Int] = {
-    val hash = MurmurHash3.hash(elem)
-    val hash1 = hash.toInt
-    val hash2 = (hash >>> 32).toInt
-    new AbstractIterator[Int] {
-      private var combined = hash1
-      private var i = 0
-
-      override def hasNext: Boolean = i < numHashes
-
-      override def next(): Int = {
-        val result = (combined & Int.MaxValue) % numBits
-        combined += hash2
-        i += 1
-        result
-      }
-    }
-  }
-
-  @JavaFriendly(scalaDelegate = "probfilter.pdsa.BloomStrategy::iterator")
-  def iteratorAsJava(elem: T): JavaIterator[Integer] = new JavaIterator[Integer] {
-    private val scalaIterator = iterator(elem)
-
-    override def hasNext: Boolean = scalaIterator.hasNext
-
-    override def next(): Integer = scalaIterator.next()
+    val hash1 = MurMurHash3.hash(elem).toInt
+    val hash2 = FarmHashFingerprint64.hash(elem).toInt
+    new BloomStrategy.BloomIterator(hash1, hash2, numBits, numHashes)
   }
 }
 
@@ -46,7 +20,7 @@ class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacit
 object BloomStrategy {
   /**
    * @param capacity expected number of elements to be inserted
-   * @param fpp expected false positive possibility between 0 and 1
+   * @param fpp desired false positive possibility between 0 and 1
    * @param funnel the funnel object to use
    * @throws IllegalArgumentException if any parameter is out of range
    */
@@ -65,4 +39,18 @@ object BloomStrategy {
   private def optimalBits(p: Double, n: Int): Int = math.ceil(n * -math.log(p) / (ln2 * ln2)).toInt
 
   private def optimalHashes(p: Double): Int = math.ceil(-math.log(p) / ln2).toInt
+
+  private final class BloomIterator(val hash1: Int, val hash2: Int, val numBits: Int, val numHashes: Int) extends Iterator[Int] {
+    private var combined = hash1
+    private var iter = 0
+
+    override def hasNext: Boolean = iter < numHashes
+
+    override def next(): Int = {
+      iter += 1
+      val result = (combined & Int.MaxValue) % numBits
+      combined += hash2
+      result
+    }
+  }
 }

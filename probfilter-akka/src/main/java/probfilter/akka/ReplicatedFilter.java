@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @see probfilter.akka.ReplicatedFilterKey
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class ReplicatedFilter implements ReplicatedData, Serializable {
+public final class ReplicatedFilter implements ReplicatedData, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -23,7 +23,7 @@ public class ReplicatedFilter implements ReplicatedData, Serializable {
         this.filter = filter;
     }
 
-    public <E, T extends BaseFilter<E, T>> BaseFilter<E, T> as() {
+    public <E, T> BaseFilter<E, T> as() {
         return filter;
     }
 
@@ -32,11 +32,11 @@ public class ReplicatedFilter implements ReplicatedData, Serializable {
     }
 
     public ReplicatedFilter add(Object elem) {
-        return new ReplicatedFilter(filter.add(elem));
+        return new ReplicatedFilter((BaseFilter) filter.add(elem));
     }
 
     public ReplicatedFilter remove(Object elem) {
-        return new ReplicatedFilter(filter.remove(elem));
+        return new ReplicatedFilter((BaseFilter) filter.remove(elem));
     }
 
     public ReplicatedFilter merge(ReplicatedFilter that) {

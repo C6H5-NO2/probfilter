@@ -29,6 +29,6 @@ class GBloomFilterTest extends AnyFunSuite {
   }
 
   test("GBloomFilter should contain all elements after merged") {
-    BaseFilterTests.testMerge(new GBloomFilter(strategy), strategy.capacity, strategy.fpp)(this)
+    BaseFilterTests.testMerge(new GBloomFilter(strategy), strategy.capacity, strategy.desiredFpp)(this)
   }
 }

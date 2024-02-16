@@ -7,12 +7,9 @@ import probfilter.util.UnsignedVal._
 import scala.collection.immutable.TreeMap
 
 
-/**
- * An immutable version vector.
- */
+/** An immutable version vector. */
 @SerialVersionUID(1L)
-final class VersionVector private(private val version: TreeMap[Short, Int])
-  extends Mergeable[VersionVector] with Serializable {
+final class VersionVector private(private val version: TreeMap[Short, Int]) extends Mergeable[VersionVector] {
   def this() = this(new TreeMap[Short, Int]()((x, y) => UnsignedNumber.compare(x, y)))
 
   /**
@@ -29,13 +26,18 @@ final class VersionVector private(private val version: TreeMap[Short, Int])
     new VersionVector(version.updated(replicaId, ts))
   }
 
+  override def lteq(that: VersionVector): Boolean = {
+    this.version.forall { case (id, ts) => !(ts gtu that.version.getOrElse(id, 0)) }
+  }
+
   override def merge(that: VersionVector): VersionVector = {
-    var clock2 = that.version
-    for ((id, ts) <- this.version) {
-      if (ts gtu clock2.getOrElse(id, 0))
-        clock2 = clock2.updated(id, ts)
+    val v2 = this.version.foldLeft(that.version) { case (v2, (id, ts)) =>
+      if (ts gtu v2.getOrElse(id, 0))
+        v2.updated(id, ts)
+      else
+        v2
     }
-    new VersionVector(clock2)
+    new VersionVector(v2)
   }
 
   override def toString: String =
