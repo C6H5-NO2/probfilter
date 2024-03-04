@@ -1,112 +1,55 @@
 package probfilter.crdt.immutable
 
 import probfilter.crdt.BaseFilter
-import probfilter.pdsa.{ByteCuckooTable, CuckooStrategy, MapByteCuckooTable}
-
-import scala.util.control.Breaks.{break, breakable}
+import probfilter.pdsa.{CuckooFilterOps, CuckooStrategy, CuckooTable}
 
 
-/**
- * An immutable grow-only replicated cuckoo filter.
- */
+/** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class GCuckooFilter[T] private(val strategy: CuckooStrategy[T], val data: ByteCuckooTable)
-  extends BaseFilter[T, GCuckooFilter[T]] {
-  def this(strategy: CuckooStrategy[T]) = this(strategy, new MapByteCuckooTable())
+final class GCuckooFilter[E] private
+// todo: Short -> Byte | Short
+(val strategy: CuckooStrategy[E], val data: CuckooTable[Short]) extends BaseFilter[E, GCuckooFilter[E]] {
+  def this(strategy: CuckooStrategy[E]) = this(strategy, CuckooTable.empty[Short])
 
-  override def mightContain(elem: T): Boolean = {
-    val triple = strategy.getCuckooTriple(elem)
+  override def size(): Int = data.size
+
+  private def containsTriple(triple: CuckooStrategy.Triple): Boolean = {
     data.at(triple.i).contains(triple.fp) || data.at(triple.j).contains(triple.fp)
   }
 
-  override def add(elem: T): GCuckooFilter[T] = {
+  override def contains(elem: E): Boolean = {
     val triple = strategy.getCuckooTriple(elem)
-
-    // check whether the two candidate buckets are saturated
-    val sizeAtI = data.at(triple.i).size
-    if (sizeAtI > strategy.bucketSize)
-      throw new CuckooStrategy.BucketOverflowException(elem, triple.i)
-    val sizeAtJ = data.at(triple.j).size
-    if (sizeAtJ > strategy.bucketSize)
-      throw new CuckooStrategy.BucketOverflowException(elem, triple.j)
-
-    if (mightContain(elem))
-      return this
-
-    // if either of the candidate buckets has empty slot
-    if (sizeAtI < strategy.bucketSize) {
-      val newData = data.at(triple.i).add(triple.fp)
-      return new GCuckooFilter[T](this.strategy, newData)
-    }
-    if (sizeAtJ < strategy.bucketSize) {
-      val newData = data.at(triple.j).add(triple.fp)
-      return new GCuckooFilter[T](this.strategy, newData)
-    }
-
-    // cuckoo displacement
-    val iterator = strategy.iterator(triple.i)
-    var newData = data
-    var swappedFp = triple.fp
-    while (iterator.hasNext) {
-      val pair = newData.at(iterator.peek).replace(swappedFp)
-      newData = pair._1
-      swappedFp = pair._2
-      val idx = iterator.next(swappedFp)
-      val bucket = newData.at(idx)
-      val size = bucket.size
-      if (size > strategy.bucketSize)
-        throw new CuckooStrategy.BucketOverflowException(elem, idx)
-      if (size < strategy.bucketSize) {
-        newData = bucket.add(swappedFp)
-        return new GCuckooFilter[T](this.strategy, newData)
-      }
-    }
-
-    throw new CuckooStrategy.MaxIterationReachedException(elem)
+    containsTriple(triple)
   }
 
-  override def merge(that: GCuckooFilter[T]): GCuckooFilter[T] = {
-    import scala.collection.immutable.{HashMap => ImmuHashMap}
-    import scala.collection.mutable.{ArrayBuffer, HashMap => MuHashMap}
+  override def add(elem: E): GCuckooFilter[E] = {
+    val triple = strategy.getCuckooTriple(elem)
+    if (containsTriple(triple))
+      return this
+    val newData = CuckooFilterOps.add(triple, triple.fp, data)(strategy, elem)
+    new GCuckooFilter(strategy, newData)
+  }
 
-    val newData = MuHashMap.empty[Int, ArrayBuffer[Byte]]
+  override def lteq(that: GCuckooFilter[E]): Boolean = ???
 
-    // merge entries
-    for (i <- 0 until strategy.numBuckets) {
-      this.data.at(i).concat(that.data.at(i)).distinct.foreach { fp =>
-        val j = strategy.getAltBucket(fp, i)
-        if (j < i && (this.data.at(j).contains(fp) || that.data.at(j).contains(fp))) {
-          ;
+  override def merge(that: GCuckooFilter[E]): GCuckooFilter[E] = {
+    val newData = (0 until strategy.numBuckets).foldLeft(this.data) { (newData, i) =>
+      val thisBucket = this.data.at(i)
+      val thatBucket = that.data.at(i)
+      thatBucket.iterator.foldLeft(newData) { (s, e) =>
+        if (thisBucket.contains(e)) {
+          s
         } else {
-          newData.getOrElseUpdate(i, ArrayBuffer.empty).addOne(fp)
+          // todo: entry -> fp -> entry
+          val alt = strategy.getAltBucket(e, i)
+          if (this.data.at(alt).contains(e))
+            s
+          else
+            s.at(i).add(e)
         }
       }
     }
 
-    // (somewhat) rebalance
-    for (i <- 0 until strategy.numBuckets) breakable {
-      val buffer = newData.getOrElse(i, break())
-      val size = buffer.size
-      if (size <= strategy.bucketSize)
-        break()
-
-      val swappedFps = ArrayBuffer.empty[Byte]
-      breakable {
-        buffer.foreach { fp =>
-          val j = strategy.getAltBucket(fp, i)
-          if (j != i) {
-            newData.getOrElseUpdate(j, ArrayBuffer.empty).addOne(fp)
-            swappedFps.addOne(fp)
-            if (size - swappedFps.size <= strategy.bucketSize)
-              break()
-          }
-        }
-      }
-
-      buffer.filterInPlace(fp => !swappedFps.contains(fp))
-    }
-
-    val immuData = newData.view.mapValues(_.toArray).to(ImmuHashMap)
-    new GCuckooFilter[T](this.strategy, new MapByteCuckooTable(immuData))
+    new GCuckooFilter[E](this.strategy, newData)
   }
 }

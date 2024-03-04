@@ -1,6 +1,6 @@
 package probfilter.crdt.immutable
 
-import probfilter.crdt.Mergeable
+import probfilter.crdt.Convergent
 import probfilter.util.UnsignedNumber
 import probfilter.util.UnsignedVal._
 
@@ -9,7 +9,7 @@ import scala.collection.immutable.TreeMap
 
 /** An immutable version vector. */
 @SerialVersionUID(1L)
-final class VersionVector private(private val version: TreeMap[Short, Int]) extends Mergeable[VersionVector] {
+final class VersionVector private(private val version: TreeMap[Short, Int]) extends Convergent[VersionVector] {
   def this() = this(new TreeMap[Short, Int]()((x, y) => UnsignedNumber.compare(x, y)))
 
   /**

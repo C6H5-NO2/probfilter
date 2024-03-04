@@ -3,7 +3,7 @@ package probfilter.crdt;
 import scala.util.Try;
 
 
-public interface BaseFilter<E, T> extends Mergeable<T> {
+public interface BaseFilter<E, T> extends Convergent<T> {
     int size();
 
     /**

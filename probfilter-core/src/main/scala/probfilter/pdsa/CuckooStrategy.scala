@@ -6,8 +6,9 @@ import probfilter.util.UnsignedNumber
 
 
 @SerialVersionUID(1L)
-class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int, val fpBits: Int)
-                               (implicit val funnel: Funnel[_ >: T]) extends Serializable {
+class CuckooStrategy[T] private
+(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int, val fpBits: Int)
+(implicit val funnel: Funnel[_ >: T]) extends Serializable {
   val fpp: Double = 2.0 * bucketSize / (1 << fpBits)
 
   /** @return `fp = fingerprint(elem); i = hash(elem)` */
@@ -29,10 +30,6 @@ class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val ma
     val pair = getCuckooPair(elem)
     new CuckooStrategy.Triple(pair.fp, pair.i, getAltBucket(pair.fp, pair.i))
   }
-
-  def iterator(i: Int): CuckooStrategy.CuckooIterator = {
-    new CuckooStrategy.CuckooIterator(i, this)
-  }
 }
 
 
@@ -46,7 +43,7 @@ object CuckooStrategy {
    */
   def create[T](capacity: Int, bucketSize: Int, maxIterations: Int)(implicit funnel: Funnel[_ >: T]): CuckooStrategy[T] = {
     require(capacity > 0, s"CuckooStrategy.create: capacity = $capacity not > 0")
-    require((1 to 8) contains bucketSize, s"CuckooStrategy.create: bucketSize = $bucketSize !in [1, 8]")
+    require(1 <= bucketSize && bucketSize <= 8, s"CuckooStrategy.create: bucketSize = $bucketSize !in [1, 8]")
     require(maxIterations >= 0, s"CuckooStrategy.create: maxIterations = $maxIterations < 0")
     val numBuckets = try {
       IntMath.ceilingPowerOfTwo(capacity / bucketSize)
@@ -62,27 +59,13 @@ object CuckooStrategy {
   final class Triple(val fp: Short, val i: Int, val j: Int) {
     override def equals(obj: Any): Boolean = obj match {
       case obj: Triple => fp == obj.fp && i == obj.i && j == obj.j
-      case obj: (Int, Int, Int) => UnsignedNumber.toUInt(fp) == obj._1 && i == obj._2 && j == obj._3
+      case Tuple3(_1: Int, _2: Int, _3: Int) => UnsignedNumber.toUInt(fp) == _1 && i == _2 && j == _3
       case _ => false
     }
 
     override def hashCode(): Int = java.util.Objects.hash(fp, i, j)
 
     override def toString: String = s"(${UnsignedNumber.toString(fp)}, $i, $j)"
-  }
-
-  final class CuckooIterator(private var idx: Int, private val strategy: CuckooStrategy[_]) {
-    private var iter = 0
-
-    def peek: Int = idx
-
-    def hasNext: Boolean = iter < strategy.maxIterations
-
-    def next(fp: Short): Int = {
-      iter += 1
-      idx = strategy.getAltBucket(fp, idx)
-      idx
-    }
   }
 
   final class BucketOverflowException(private val elem: Any, private val i: Int)

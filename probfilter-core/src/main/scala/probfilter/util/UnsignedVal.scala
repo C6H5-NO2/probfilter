@@ -1,7 +1,7 @@
 package probfilter.util
 
 
-/** @note Always `import probfilter.util.UnsignedVal._` to get the correct conversions. */
+/** @note Always `import probfilter.util.UnsignedVal._` to import all conversions. */
 object UnsignedVal {
   implicit final class RichUnsignedByte(private val b: Byte) extends AnyVal {
     @inline def toUnsignedString: String = UnsignedNumber.toString(b)

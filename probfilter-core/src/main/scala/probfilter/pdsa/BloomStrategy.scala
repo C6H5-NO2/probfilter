@@ -2,6 +2,8 @@ package probfilter.pdsa
 
 import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 
+import scala.collection.AbstractIterator
+
 
 @SerialVersionUID(1L)
 class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacity: Int, val desiredFpp: Double)
@@ -12,7 +14,7 @@ class BloomStrategy[T] private(val numBits: Int, val numHashes: Int, val capacit
   def iterator(elem: T): Iterator[Int] = {
     val hash1 = MurMurHash3.hash(elem).toInt
     val hash2 = FarmHashFingerprint64.hash(elem).toInt
-    new BloomStrategy.BloomIterator(hash1, hash2, numBits, numHashes)
+    new BloomStrategy.BloomIterator(hash1, hash2, this)
   }
 }
 
@@ -40,9 +42,12 @@ object BloomStrategy {
 
   private def optimalHashes(p: Double): Int = math.ceil(-math.log(p) / ln2).toInt
 
-  private final class BloomIterator(val hash1: Int, val hash2: Int, val numBits: Int, val numHashes: Int) extends Iterator[Int] {
-    private var combined = hash1
-    private var iter = 0
+  private final class BloomIterator private
+  (private var combined: Int, private val hash2: Int, private val numBits: Int, private val numHashes: Int)
+    extends AbstractIterator[Int] {
+    def this(hash1: Int, hash2: Int, strategy: BloomStrategy[_]) = this(hash1, hash2, strategy.numBits, strategy.numHashes)
+
+    private var iter: Int = 0
 
     override def hasNext: Boolean = iter < numHashes
 
