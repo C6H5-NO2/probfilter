@@ -11,6 +11,7 @@ lazy val commonSettings = Seq(
 
 lazy val root = Project("probfilter", file(".")).aggregate(
   core,
+  verifx,
   akka,
   sample
 )
@@ -32,6 +33,15 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
   //     oldStrategy(x)
   // },
   // assembly / assemblyOption ~= {_.withIncludeScala(false)}
+)
+
+lazy val verifx = Project("probfilter-verifx", file("probfilter-verifx")).settings(
+  commonSettings,
+  libraryDependencies ++= Seq(
+    "org.verifx" %% "verifx" % "1.0.2",
+    "org.scalatest" %% "scalatest" % scalatestVersion % Test
+  ),
+  Compile / unmanagedJars ++= Seq(file("probfilter-verifx/lib/com.microsoft.z3.jar"))
 )
 
 lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(

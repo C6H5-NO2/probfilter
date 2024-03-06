@@ -1,0 +1,41 @@
+import probfilter.verifx.lemma.CvRDT
+
+
+trait CvRDTProof[T <: CvRDT[T]] {
+  proof is_a_CvRDT {
+    forall (x: T, y: T, z: T) {
+      (x.reachable() && y.reachable() && z.reachable() &&
+        x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
+        x.merge(x).equals(x) && // idempotent
+          x.merge(y).equals(y.merge(x)) && // commutative
+          x.merge(y).merge(z).equals(x.merge(y.merge(z))) && // associative
+          x.merge(y).reachable() && // merged state is reachable
+          x.merge(y).merge(z).reachable() &&
+          x.compatible(y) == y.compatible(x) // compatible commutes
+      }
+    }
+  }
+
+  proof mergeIdempotent {
+    forall (x: T) {
+      x.reachable() =>:
+        x.merge(x).equals(x)
+    }
+  }
+
+  proof mergeCommutative {
+    forall (x: T, y: T) {
+      (x.reachable() && y.reachable() && x.compatible(y)) =>:
+        x.merge(y).equals(y.merge(x)) && x.merge(y).reachable()
+    }
+  }
+
+  proof mergeAssociative {
+    forall (x: T, y: T, z: T) {
+      (x.reachable() && y.reachable() && z.reachable() &&
+        x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
+        x.merge(y).merge(z).equals(x.merge(y.merge(z))) && x.merge(y).merge(z).reachable()
+      }
+    }
+  }
+}

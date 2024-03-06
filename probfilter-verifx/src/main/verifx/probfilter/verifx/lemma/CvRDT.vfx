@@ -1,0 +1,11 @@
+trait CvRDT[T <: CvRDT[T]] {
+  def reachable(): Boolean = true
+
+  def compatible(that: T): Boolean = true
+
+  def merge(that: T): T
+
+  def compare(that: T): Boolean
+
+  def equals(that: T): Boolean = this.asInstanceOf[T].compare(that) && that.compare(this.asInstanceOf[T])
+}

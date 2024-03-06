@@ -1,0 +1,12 @@
+import probfilter.verifx.lemma.CvRDT
+import probfilter.verifx.lemma.CvRDTProof
+
+
+class GBloomFilter(set: Set[Int]) extends CvRDT[GBloomFilter] {
+  def merge(that: GBloomFilter): GBloomFilter = new GBloomFilter(this.set.union(that.set))
+
+  def compare(that: GBloomFilter): Boolean = this.set.subsetOf(that.set)
+}
+
+
+object GBloomFilter extends CvRDTProof[GBloomFilter]
