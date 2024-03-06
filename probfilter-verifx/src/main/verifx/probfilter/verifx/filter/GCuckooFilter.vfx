@@ -1,0 +1,27 @@
+import probfilter.verifx.lemma.CvRDT
+import probfilter.verifx.lemma.CvRDTProof
+
+
+class Entry(idx: Int, fp: Int)
+
+
+class GCuckooFilter(set: Set[Entry]) extends CvRDT[GCuckooFilter] {
+  def merge(that: GCuckooFilter): GCuckooFilter = {
+    val d = this.getD(this.set)
+    val s = this.set.union(that.set.diff(d))
+    new GCuckooFilter(s)
+  }
+
+  def compare(that: GCuckooFilter): Boolean = {
+    val thisSuper = this.set.union(this.getD(this.set))
+    val thatSuper = that.set.union(that.getD(that.set))
+    thisSuper.subsetOf(thatSuper)
+  }
+
+  private def getD(set: Set[Entry]): Set[Entry] = set.map((e: Entry) => new Entry(this.getAltIdx(e.idx, e.fp), e.fp))
+
+  private def getAltIdx(idx: Int, fp: Int): Int = fp - idx
+}
+
+
+object GCuckooFilter extends CvRDTProof[GCuckooFilter]

@@ -12,7 +12,8 @@ class ProofTests extends AnyFlatSpec {
   }
 
   "GCuckooFilter" should "be a CvRDT" in {
-    // todo
+    val res = prover.prove(("GCuckooFilter", "is_a_CvRDT"))
+    assert(res.result == "Proved", res)
   }
 
   "ORCuckooFilter" should "be a CvRDT" in {
