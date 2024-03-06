@@ -1,0 +1,32 @@
+import probfilter.verifx.lemma.CvRDT
+import probfilter.verifx.lemma.CvRDTProof
+
+
+class Version(rid: Int, ts: Int)
+
+
+class Entry(idx: Int, fp: Int, rid: Int, ts: Int)
+
+
+class ORCuckooFilter(rid: Int, vv: Set[Version], set: Set[Entry]) extends CvRDT[ORCuckooFilter] {
+  def merge(that: ORCuckooFilter): ORCuckooFilter = {
+    val s1 = this.set.intersect(that.set)
+    val s2 = this.set.diff(that.set).filter((en: Entry) => !that.vv.contains(new Version(en.rid, en.ts)))
+    val s3 = that.set.diff(this.set).filter((en: Entry) => !this.vv.contains(new Version(en.rid, en.ts)))
+    val s4 = this.set.filter((en: Entry) => that.set.contains(new Entry(this.getAltIdx(en.idx, en.fp), en.fp, en.rid, en.ts)))
+    val s = s1.union(s2).union(s3).union(s4)
+    val v = this.vv.union(that.vv)
+    new ORCuckooFilter(this.rid, v, s)
+  }
+
+  def compare(that: ORCuckooFilter): Boolean = {
+    val thisC = this.vv.filter((vn: Version) => !exists (idx: Int, fp: Int) { this.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
+    val thatC = that.vv.filter((vn: Version) => !exists (idx: Int, fp: Int) { that.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
+    this.vv.subsetOf(that.vv) && thisC.subsetOf(thatC)
+  }
+
+  private def getAltIdx(idx: Int, fp: Int): Int = fp - idx
+}
+
+
+object ORCuckooFilter extends CvRDTProof[ORCuckooFilter]
