@@ -3,7 +3,7 @@ package probfilter.akka
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.funsuite.AnyFunSuiteLike
 import probfilter.crdt.BaseFilter
-import probfilter.crdt.immutable.{AWCuckooFilter, GBloomFilter, GCuckooFilter}
+import probfilter.crdt.immutable.{GBloomFilter, GCuckooFilter, ORCuckooFilter}
 import probfilter.hash.Funnels.IntFunnel
 import probfilter.pdsa.{BloomStrategy, CuckooStrategy}
 
@@ -24,12 +24,12 @@ class FilterIntegrationTest
     testReplication(filters)
   }
 
-  test("AWCuckooFilter should be replicated by Akka") {
+  test("ORCuckooFilter should be replicated by Akka") {
     val strategy = CuckooStrategy.create(1e4.toInt, 2, 20)
     val filters = Vector.apply(
-      new AWCuckooFilter(strategy, 1),
-      new AWCuckooFilter(strategy, 2),
-      new AWCuckooFilter(strategy, 3)
+      new ORCuckooFilter(strategy, 1),
+      new ORCuckooFilter(strategy, 2),
+      new ORCuckooFilter(strategy, 3)
     )
     testReplication(filters)
   }

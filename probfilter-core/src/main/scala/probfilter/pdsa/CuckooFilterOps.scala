@@ -4,15 +4,8 @@ import scala.annotation.tailrec
 
 
 object CuckooFilterOps {
-  private var victimIdx: Int = -1
-
-  def rand(until: Int): Int = {
-    victimIdx = (victimIdx + 1) % until
-    victimIdx
-  }
-
-  def add[@specialized(Byte, Short, Long) E](triple: CuckooStrategy.Triple, entry: E, data: CuckooTable[E])
-                                            (implicit strategy: CuckooStrategy[_], elem: Any): CuckooTable[E] = {
+  def add[E](triple: CuckooStrategy.Triple, entry: E, data: CuckooTable[E])
+            (implicit strategy: CuckooStrategy[_], elem: Any): CuckooTable[E] = {
     val i1 = triple.i
     val i2 = triple.j
     val b1 = data.at(i1)
@@ -28,14 +21,20 @@ object CuckooFilterOps {
       b1.add(entry)
     else if (s2 < c)
       b2.add(entry)
-    else
-      displace(0, new CuckooStrategy.Pair(triple.fp, triple.i), entry, data)(strategy, elem)
+    else {
+      val extractor = entry match {
+        case Byte => (e: E) => (e.asInstanceOf[Int] & 0xff).toShort
+        case Short => (e: E) => e.asInstanceOf[Short]
+        case Long => (e: E) => LongCuckooEntry.from(e.asInstanceOf[Long]).fingerprint
+        case _ => (e: E) => e.asInstanceOf[Short]
+      }
+      displace(0, new CuckooStrategy.Pair(triple.fp, triple.i), entry, data)(strategy, elem, extractor)
+    }
   }
 
   @tailrec
-  private def displace[@specialized(Byte, Short, Long) E]
-  (attempts: Int, pair: CuckooStrategy.Pair, entry: E, data: CuckooTable[E])
-  (implicit strategy: CuckooStrategy[_], elem: Any): CuckooTable[E] = {
+  private def displace[E](attempts: Int, pair: CuckooStrategy.Pair, entry: E, data: CuckooTable[E])
+                         (implicit strategy: CuckooStrategy[_], elem: Any, extractor: E => Short): CuckooTable[E] = {
     if (attempts > strategy.maxIterations)
       throw new CuckooStrategy.MaxIterationReachedException(elem)
 
@@ -45,13 +44,22 @@ object CuckooFilterOps {
     val c = strategy.bucketSize
     if (s1 > c)
       throw new CuckooStrategy.BucketOverflowException(elem, i1)
+
     else if (s1 < c)
       b1.add(entry)
+
     else {
       val (displacedEntry, newData) = b1.replace(entry, rand(b1.size))
-      val fp = entry.asInstanceOf[Short] // todo
+      val fp = extractor(entry)
       val i2 = strategy.getAltBucket(fp, i1)
-      displace(attempts + 1, new CuckooStrategy.Pair(fp, i2), displacedEntry, newData)(strategy, elem)
+      displace(attempts + 1, new CuckooStrategy.Pair(fp, i2), displacedEntry, newData)(strategy, elem, extractor)
     }
+  }
+
+  private var victimIdx: Int = -1
+
+  def rand(until: Int): Int = {
+    victimIdx = (victimIdx + 1) % until
+    victimIdx
   }
 }

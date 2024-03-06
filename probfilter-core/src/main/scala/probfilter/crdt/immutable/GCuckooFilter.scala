@@ -7,7 +7,7 @@ import probfilter.pdsa.{CuckooFilterOps, CuckooStrategy, CuckooTable}
 /** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
 final class GCuckooFilter[E] private
-// todo: Short -> Byte | Short
+// todo: wrap Short -> Byte | Short
 (val strategy: CuckooStrategy[E], val data: CuckooTable[Short]) extends BaseFilter[E, GCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E]) = this(strategy, CuckooTable.empty[Short])
 
@@ -40,7 +40,7 @@ final class GCuckooFilter[E] private
         if (thisBucket.contains(e)) {
           s
         } else {
-          // todo: entry -> fp -> entry
+          // todo: make (entry -> fp -> entry) a function
           val alt = strategy.getAltBucket(e, i)
           if (this.data.at(alt).contains(e))
             s

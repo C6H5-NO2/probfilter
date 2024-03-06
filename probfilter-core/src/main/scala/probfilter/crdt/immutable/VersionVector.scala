@@ -16,19 +16,15 @@ final class VersionVector private(private val version: TreeMap[Short, Int]) exte
    * @param replicaId 16-bit unsigned id
    * @return 32-bit unsigned timestamp
    */
-  def get(replicaId: Short): Int = version.getOrElse(replicaId, 0)
+  @inline def get(replicaId: Short): Int = version.getOrElse(replicaId, 0)
 
-  /**
-   * @param replicaId 16-bit unsigned id
-   */
-  def inc(replicaId: Short): VersionVector = {
-    val ts = version.getOrElse(replicaId, 0) + 1
-    new VersionVector(version.updated(replicaId, ts))
-  }
+  @inline def next(replicaId: Short): Int = get(replicaId) + 1
 
-  override def lteq(that: VersionVector): Boolean = {
-    this.version.forall { case (id, ts) => !(ts gtu that.version.getOrElse(id, 0)) }
-  }
+  @inline def inc(replicaId: Short): VersionVector = new VersionVector(version.updated(replicaId, next(replicaId)))
+
+  @inline def observes(replicaId: Short, timestamp: Int): Boolean = !(timestamp gtu get(replicaId))
+
+  override def lteq(that: VersionVector): Boolean = this.version.forall { case (id, ts) => that.observes(id, ts) }
 
   override def merge(that: VersionVector): VersionVector = {
     val v2 = this.version.foldLeft(that.version) { case (v2, (id, ts)) =>

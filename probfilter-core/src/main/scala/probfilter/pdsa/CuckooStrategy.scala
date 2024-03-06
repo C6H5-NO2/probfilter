@@ -6,9 +6,8 @@ import probfilter.util.UnsignedNumber
 
 
 @SerialVersionUID(1L)
-class CuckooStrategy[T] private
-(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int, val fpBits: Int)
-(implicit val funnel: Funnel[_ >: T]) extends Serializable {
+class CuckooStrategy[T] private(val numBuckets: Int, val bucketSize: Int, val maxIterations: Int, val capacity: Int, val fpBits: Int)
+                               (implicit val funnel: Funnel[_ >: T]) extends Serializable {
   val fpp: Double = 2.0 * bucketSize / (1 << fpBits)
 
   /** @return `fp = fingerprint(elem); i = hash(elem)` */
