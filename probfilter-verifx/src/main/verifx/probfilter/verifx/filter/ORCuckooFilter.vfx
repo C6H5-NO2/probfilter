@@ -9,6 +9,15 @@ class Entry(idx: Int, fp: Int, rid: Int, ts: Int)
 
 
 class ORCuckooFilter(rid: Int, vv: Set[Version], set: Set[Entry]) extends CvRDT[ORCuckooFilter] {
+  override def reachable(): Boolean = {
+    !this.hasDuplicatedVersion(this.set) &&
+      this.set.map((en: Entry) => new Version(en.rid, en.ts)).subsetOf(this.vv)
+  }
+
+  override def compatible(that: ORCuckooFilter): Boolean = {
+    !this.hasDuplicatedVersion(this.set.union(that.set))
+  }
+
   def merge(that: ORCuckooFilter): ORCuckooFilter = {
     val s1 = this.set.intersect(that.set)
     val s2 = this.set.diff(that.set).filter((en: Entry) => !that.vv.contains(new Version(en.rid, en.ts)))
@@ -26,6 +35,14 @@ class ORCuckooFilter(rid: Int, vv: Set[Version], set: Set[Entry]) extends CvRDT[
   }
 
   private def getAltIdx(idx: Int, fp: Int): Int = fp - idx
+
+  private def hasDuplicatedVersion(set: Set[Entry]): Boolean = {
+    exists (e1: Entry, e2: Entry) {
+      set.contains(e1) && set.contains(e2) &&
+        e1.rid == e2.rid && e1.ts == e2.ts &&
+        !((e1.idx == e2.idx || e1.idx == this.getAltIdx(e2.idx, e2.fp)) && e1.fp == e2.fp)
+    }
+  }
 }
 
 

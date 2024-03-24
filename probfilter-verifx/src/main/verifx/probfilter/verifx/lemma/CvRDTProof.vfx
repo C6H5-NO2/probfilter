@@ -2,39 +2,15 @@ import probfilter.verifx.lemma.CvRDT
 
 
 trait CvRDTProof[T <: CvRDT[T]] {
-  proof is_a_CvRDT {
-    forall (x: T, y: T, z: T) {
-      (x.reachable() && y.reachable() && z.reachable() &&
-        x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
-        x.merge(x).equals(x) && // idempotent
-          x.merge(y).equals(y.merge(x)) && // commutative
-          x.merge(y).merge(z).equals(x.merge(y.merge(z))) && // associative
-          x.merge(y).reachable() && // merged state is reachable
-          x.merge(y).merge(z).reachable() &&
-          x.compatible(y) == y.compatible(x) // compatible commutes
-      }
-    }
-  }
-
-  proof mergeIdempotent {
-    forall (x: T) {
-      x.reachable() =>:
-        x.merge(x).equals(x)
-    }
-  }
-
-  proof mergeCommutative {
-    forall (x: T, y: T) {
-      (x.reachable() && y.reachable() && x.compatible(y)) =>:
-        x.merge(y).equals(y.merge(x)) && x.merge(y).reachable()
-    }
-  }
-
-  proof mergeAssociative {
-    forall (x: T, y: T, z: T) {
-      (x.reachable() && y.reachable() && z.reachable() &&
-        x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
-        x.merge(y).merge(z).equals(x.merge(y.merge(z))) && x.merge(y).merge(z).reachable()
+  proof isMonotonicSemilattice {
+    forall (x: T, y: T, m2: T) {
+      (x.reachable() && y.reachable() && x.compatible(y)) =>: {
+        val lub = x.merge(y)
+        lub.reachable() &&
+          x.compare(lub) && y.compare(lub) &&
+          // Equivalent to `!exists (m2: T) { m2.reachable() && m2.compare(lub) && !lub.compare(m2) && x.compare(m2) && y.compare(m2) }`.
+          // However, `m2` is moved to the top level so that it is included in `counterExample` when the proof is rejected.
+          ((m2.reachable() && x.compare(m2) && y.compare(m2)) =>: lub.compare(m2))
       }
     }
   }

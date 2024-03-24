@@ -15,9 +15,9 @@ final class Prover {
     val proofRes = pc.checkProofForModel(proof, maxTries, timeoutInSeconds * 1000)
     try {
       proofRes match {
-        case p: Proved => new Prover.Result("Proved", p.z3Program, "")
-        case r: Rejected => new Prover.Result("Rejected", r.z3Program, r.toString())
-        case a: Aborted => new Prover.Result("Aborted", a.z3Program, "")
+        case p: Proved => Prover.Result("Proved", "", p.z3Program)
+        case r: Rejected => Prover.Result("Rejected", r.toString(), r.z3Program)
+        case a: Aborted => Prover.Result("Aborted", "", a.z3Program)
       }
     } finally {
       proofRes.dispose()
@@ -27,5 +27,5 @@ final class Prover {
 
 
 object Prover {
-  final class Result(val result: String, val z3Program: String, val counterExample: String)
+  final case class Result(result: String, counterExample: String, z3Program: String)
 }
