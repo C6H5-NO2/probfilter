@@ -2,16 +2,85 @@ import probfilter.verifx.lemma.CvRDT
 
 
 trait CvRDTProof[T <: CvRDT[T]] {
-  proof isMonotonicSemilattice {
-    forall (x: T, y: T, m2: T) {
+  // vvv Proof of join semilattice as partially ordered set vvv
+
+  proof compareIsReflexive {
+    forall (x: T) {
+      x.reachable() =>:
+        x.compare(x)
+    }
+  }
+
+  proof compareIsAntisymmetric {
+    forall (x: T, y: T) {
       (x.reachable() && y.reachable() && x.compatible(y)) =>: {
-        val lub = x.merge(y)
-        lub.reachable() &&
-          x.compare(lub) && y.compare(lub) &&
-          // Equivalent to `!exists (m2: T) { m2.reachable() && m2.compare(lub) && !lub.compare(m2) && x.compare(m2) && y.compare(m2) }`.
-          // However, `m2` is moved to the top level so that it is included in `counterExample` when the proof is rejected.
-          ((m2.reachable() && x.compare(m2) && y.compare(m2)) =>: lub.compare(m2))
+        (x.compare(y) && y.compare(x)) =>: x.equals(y)
       }
     }
   }
+
+  proof compareIsTransitive {
+    forall (x: T, y: T, z: T) {
+      (x.reachable() && y.reachable() && z.reachable() && x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
+        (x.compare(y) && y.compare(z)) =>: x.compare(z)
+      }
+    }
+  }
+
+  proof compareMatchesMerge {
+    forall (x: T, y: T, w: T) {
+      (x.reachable() && y.reachable() && x.compatible(y)) =>: {
+        val m = x.merge(y)
+        // join should exist for all states
+        m.reachable() &&
+          x.compare(m) && y.compare(m) &&
+          // `w` is moved to the top level so that it is included in `counterExample` when the proof is rejected.
+          ((w.reachable() && x.compare(w) && y.compare(w)) =>: m.compare(w))
+      }
+    }
+  }
+
+  // vvv Proof of join semilattice as algebraic structure vvv
+
+  proof mergeIsIdempotent {
+    forall (x: T) {
+      x.reachable() =>:
+        x.merge(x).equals(x)
+    }
+  }
+
+  proof mergeIsCommutative {
+    forall (x: T, y: T) {
+      (x.reachable() && y.reachable() && x.compatible(y)) =>: {
+        x.merge(y).reachable() && x.merge(y).equals(y.merge(x))
+      }
+    }
+  }
+
+  proof mergeIsAssociative {
+    forall (x: T, y: T, z: T) {
+      (x.reachable() && y.reachable() && z.reachable() && x.compatible(y) && x.compatible(z) && y.compatible(z)) =>: {
+        x.merge(y).merge(z).reachable() && x.merge(y).merge(z).equals(x.merge(y.merge(z)))
+      }
+    }
+  }
+
+  proof mergeMatchesCompare {
+    forall (x: T, y: T) {
+      (x.reachable() && y.reachable() && x.compatible(y)) =>: {
+        x.merge(y).equals(y) =>: x.compare(y)
+      }
+    }
+  }
+
+  // vvv Template for proofs of inflation. Replace the names and types accordingly. vvv
+  /*
+  proof updateIsInflationary[V] {
+    forall (x: T, v: V) {
+      x.reachable() =>: {
+        x.update(v).reachable() && x.compare(x.update(v))
+      }
+    }
+  }
+  */
 }

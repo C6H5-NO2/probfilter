@@ -1,27 +1,41 @@
 import probfilter.verifx.lemma.CvRDT
 import probfilter.verifx.lemma.CvRDTProof
+import probfilter.verifx.util.Complex
 
 
 class Entry(idx: Int, fp: Int)
 
-
 class GCuckooFilter(set: Set[Entry]) extends CvRDT[GCuckooFilter] {
   def merge(that: GCuckooFilter): GCuckooFilter = {
-    val d = this.getD(this.set)
-    val s = this.set.union(that.set.diff(d))
-    new GCuckooFilter(s)
+    val d = this.toD(this.set)
+    val u = this.set.union(that.set.diff(d))
+    new GCuckooFilter(u)
   }
 
   def compare(that: GCuckooFilter): Boolean = {
-    val thisSuper = this.set.union(this.getD(this.set))
-    val thatSuper = that.set.union(that.getD(that.set))
-    thisSuper.subsetOf(thatSuper)
+    val thisU = this.set.union(this.toD(this.set))
+    val thatU = that.set.union(that.toD(that.set))
+    thisU.subsetOf(thatU)
   }
 
-  private def getD(set: Set[Entry]): Set[Entry] = set.map((e: Entry) => new Entry(this.getAltIdx(e.idx, e.fp), e.fp))
+  def add(e: Complex): GCuckooFilter = {
+    val p = this.hash(e)
+    new GCuckooFilter(this.set.add(new Entry(p.fst, p.snd)))
+  }
 
-  private def getAltIdx(idx: Int, fp: Int): Int = fp - idx
+  private def hash(e: Complex): Tuple[Int, Int] = new Tuple[Int, Int](e.real, e.imag)
+
+  private def altIndexOf(idx: Int, fp: Int): Int = fp - idx
+
+  private def toD(set: Set[Entry]): Set[Entry] = set.map((en: Entry) => new Entry(this.altIndexOf(en.idx, en.fp), en.fp))
 }
 
-
-object GCuckooFilter extends CvRDTProof[GCuckooFilter]
+object GCuckooFilter extends CvRDTProof[GCuckooFilter] {
+  proof addIsInflationary {
+    forall (x: GCuckooFilter, v: Complex) {
+      x.reachable() =>: {
+        x.add(v).reachable() && x.compare(x.add(v))
+      }
+    }
+  }
+}

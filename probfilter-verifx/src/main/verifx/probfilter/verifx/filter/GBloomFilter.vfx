@@ -1,12 +1,24 @@
 import probfilter.verifx.lemma.CvRDT
 import probfilter.verifx.lemma.CvRDTProof
+import probfilter.verifx.util.Complex
 
 
 class GBloomFilter(set: Set[Int]) extends CvRDT[GBloomFilter] {
   def merge(that: GBloomFilter): GBloomFilter = new GBloomFilter(this.set.union(that.set))
 
   def compare(that: GBloomFilter): Boolean = this.set.subsetOf(that.set)
+
+  def add(e: Complex): GBloomFilter = new GBloomFilter(this.set.union(this.hash(e)))
+
+  private def hash(e: Complex): Set[Int] = new Set[Int]().add(e.real).add(e.imag)
 }
 
-
-object GBloomFilter extends CvRDTProof[GBloomFilter]
+object GBloomFilter extends CvRDTProof[GBloomFilter] {
+  proof addIsInflationary {
+    forall (x: GBloomFilter, v: Complex) {
+      x.reachable() =>: {
+        x.add(v).reachable() && x.compare(x.add(v))
+      }
+    }
+  }
+}

@@ -1,49 +1,91 @@
 import probfilter.verifx.lemma.CvRDT
 import probfilter.verifx.lemma.CvRDTProof
+import probfilter.verifx.util.Complex
 
 
 class Version(rid: Int, ts: Int)
 
-
 class Entry(idx: Int, fp: Int, rid: Int, ts: Int)
 
-
-class ORCuckooFilter(rid: Int, vv: Set[Version], set: Set[Entry]) extends CvRDT[ORCuckooFilter] {
+class ORCuckooFilter(rid: Int, set: Set[Entry], hist: Set[Version]) extends CvRDT[ORCuckooFilter] {
   override def reachable(): Boolean = {
-    !this.hasDuplicatedVersion(this.set) &&
-      this.set.map((en: Entry) => new Version(en.rid, en.ts)).subsetOf(this.vv)
+    this.versionsAreUnique(this.set) &&
+      this.set.map((en: Entry) => new Version(en.rid, en.ts)).subsetOf(this.hist)
   }
 
   override def compatible(that: ORCuckooFilter): Boolean = {
-    !this.hasDuplicatedVersion(this.set.union(that.set))
+    this.versionsAreUnique(this.set.union(that.set))
   }
 
   def merge(that: ORCuckooFilter): ORCuckooFilter = {
     val s1 = this.set.intersect(that.set)
-    val s2 = this.set.diff(that.set).filter((en: Entry) => !that.vv.contains(new Version(en.rid, en.ts)))
-    val s3 = that.set.diff(this.set).filter((en: Entry) => !this.vv.contains(new Version(en.rid, en.ts)))
-    val s4 = this.set.filter((en: Entry) => that.set.contains(new Entry(this.getAltIdx(en.idx, en.fp), en.fp, en.rid, en.ts)))
+    val s2 = this.set.diff(that.set).filter((en: Entry) => !that.hist.contains(new Version(en.rid, en.ts)))
+    val s3 = that.set.diff(this.set).filter((en: Entry) => !this.hist.contains(new Version(en.rid, en.ts)))
+    val s4 = this.set.filter((en: Entry) => that.set.contains(new Entry(this.altIndexOf(en.idx, en.fp), en.fp, en.rid, en.ts)))
     val s = s1.union(s2).union(s3).union(s4)
-    val v = this.vv.union(that.vv)
-    new ORCuckooFilter(this.rid, v, s)
+    val h = this.hist.union(that.hist)
+    new ORCuckooFilter(this.rid, s, h)
   }
 
   def compare(that: ORCuckooFilter): Boolean = {
-    val thisC = this.vv.filter((vn: Version) => !exists (idx: Int, fp: Int) { this.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
-    val thatC = that.vv.filter((vn: Version) => !exists (idx: Int, fp: Int) { that.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
-    this.vv.subsetOf(that.vv) && thisC.subsetOf(thatC)
+    val thisT = this.hist.filter((vn: Version) => !exists (idx: Int, fp: Int) { this.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
+    val thatT = that.hist.filter((vn: Version) => !exists (idx: Int, fp: Int) { that.set.contains(new Entry(idx, fp, vn.rid, vn.ts)) })
+    this.hist.subsetOf(that.hist) && thisT.subsetOf(thatT)
   }
 
-  private def getAltIdx(idx: Int, fp: Int): Int = fp - idx
+  // Different from the spec in the paper. The current maximum `ts` is passed as params
+  // since there is no `max` in VeriFx, and Z3 is bad at handling recursive functions.
+  def add(e: Complex, ts: Int): ORCuckooFilter = {
+    val f = this.hash(e).snd
+    val i = this.hash(e).fst
+    val r = this.rid
+    val t = ts + 1
+    val s = this.set.add(new Entry(i, f, r, t))
+    val h = this.hist.add(new Version(r, t))
+    new ORCuckooFilter(this.rid, s, h)
+  }
 
-  private def hasDuplicatedVersion(set: Set[Entry]): Boolean = {
-    exists (e1: Entry, e2: Entry) {
-      set.contains(e1) && set.contains(e2) &&
-        e1.rid == e2.rid && e1.ts == e2.ts &&
-        !((e1.idx == e2.idx || e1.idx == this.getAltIdx(e2.idx, e2.fp)) && e1.fp == e2.fp)
+  // Different from the spec in the paper. The associated `rid` and `ts` to remove are passed as params
+  // since individual element of `Set` is not accessible in VeriFx, thus no `randomChoose`.
+  def remove(e: Complex, rid: Int, ts: Int): ORCuckooFilter = {
+    val f = this.hash(e).snd
+    val i1 = this.hash(e).fst
+    val i2 = this.altIndexOf(i1, f)
+    val u = this.set.filter((en: Entry) => (en.idx == i1 || en.idx == i2) && en.fp == f && en.rid == rid && en.ts == ts)
+    val s = this.set.diff(u)
+    new ORCuckooFilter(this.rid, s, this.hist)
+  }
+
+  private def hash(e: Complex): Tuple[Int, Int] = new Tuple[Int, Int](e.real, e.imag)
+
+  private def altIndexOf(idx: Int, fp: Int): Int = fp - idx
+
+  private def versionsAreUnique(set: Set[Entry]): Boolean = {
+    forall (e1: Entry, e2: Entry) {
+      (set.contains(e1) && set.contains(e2) && e1.rid == e2.rid && e1.ts == e2.ts) =>:
+        ((e1.idx == e2.idx || e1.idx == this.altIndexOf(e2.idx, e2.fp)) && e1.fp == e2.fp)
     }
   }
 }
 
+object ORCuckooFilter extends CvRDTProof[ORCuckooFilter] {
+  proof addIsInflationary {
+    forall (x: ORCuckooFilter, v: Complex) {
+      x.reachable() =>: {
+        forall (ts: Int) {
+          x.hist.forall((vn: Version) => (vn.rid == x.rid) =>: vn.ts < ts) =>: {
+            x.add(v, ts).reachable() && x.compare(x.add(v, ts))
+          }
+        }
+      }
+    }
+  }
 
-object ORCuckooFilter extends CvRDTProof[ORCuckooFilter]
+  proof removeIsInflationary {
+    forall (x: ORCuckooFilter, v: Complex) {
+      x.reachable() =>: {
+        forall (rid: Int, ts: Int) { x.remove(v, rid, ts).reachable() && x.compare(x.remove(v, rid, ts)) }
+      }
+    }
+  }
+}
