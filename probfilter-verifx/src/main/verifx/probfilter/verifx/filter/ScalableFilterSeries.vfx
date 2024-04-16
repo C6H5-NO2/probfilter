@@ -1,0 +1,52 @@
+import probfilter.verifx.filter.GBloomFilter
+import probfilter.verifx.lemma.CvRDT
+import probfilter.verifx.lemma.CvRDTProof
+import probfilter.verifx.util.Complex
+
+
+class SubFilter(filter: GBloomFilter) extends CvRDT[SubFilter] {
+  override def reachable(): Boolean = this.filter.reachable()
+
+  override def compatible(that: SubFilter): Boolean = this.filter.compatible(that.filter)
+
+  def merge(that: SubFilter): SubFilter = new SubFilter(this.filter.merge(that.filter))
+
+  def compare(that: SubFilter): Boolean = this.filter.compare(that.filter)
+}
+
+class ScalableFilterSeries(series: Vector[SubFilter]) extends CvRDT[ScalableFilterSeries] {
+  override def reachable(): Boolean = {
+    this.series.wellFormed() && this.series.forall((sf: SubFilter) => sf.reachable())
+  }
+
+  override def compatible(that: ScalableFilterSeries): Boolean = {
+    if (this.series.size > that.series.size)
+      this.compatibleImpl(that, this)
+    else
+      this.compatibleImpl(this, that)
+  }
+
+  private def compatibleImpl(thiz: ScalableFilterSeries, that: ScalableFilterSeries): Boolean = {
+    thiz.series.zip(that.series).forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compatible(tup.snd))
+  }
+
+  def merge(that: ScalableFilterSeries): ScalableFilterSeries = {
+    if (this.series.size > that.series.size)
+      this.mergeImpl(that, this)
+    else
+      this.mergeImpl(this, that)
+  }
+
+  private def mergeImpl(thiz: ScalableFilterSeries, that: ScalableFilterSeries): ScalableFilterSeries = {
+    val head = thiz.series.zip(that.series).map((tup: Tuple[SubFilter, SubFilter]) => tup.fst.merge(tup.snd)).positions
+    val concat = new Vector[SubFilter](that.series.size, head.combine(that.series.positions, (fst: SubFilter, snd: SubFilter) => fst))
+    new ScalableFilterSeries(concat)
+  }
+
+  def compare(that: ScalableFilterSeries): Boolean = {
+    this.series.size <= that.series.size &&
+      this.series.zip(that.series).forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compare(tup.snd))
+  }
+}
+
+object ScalableFilterSeries extends CvRDTProof[ScalableFilterSeries]
