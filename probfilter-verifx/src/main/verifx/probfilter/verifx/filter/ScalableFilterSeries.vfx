@@ -20,27 +20,13 @@ class ScalableFilterSeries(series: Vector[SubFilter]) extends CvRDT[ScalableFilt
   }
 
   override def compatible(that: ScalableFilterSeries): Boolean = {
-    if (this.series.size > that.series.size)
-      this.compatibleImpl(that, this)
-    else
-      this.compatibleImpl(this, that)
-  }
-
-  private def compatibleImpl(thiz: ScalableFilterSeries, that: ScalableFilterSeries): Boolean = {
-    thiz.series.zip(that.series).forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compatible(tup.snd))
+    this.series.positions.zip(that.series.positions).values().forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compatible(tup.snd))
   }
 
   def merge(that: ScalableFilterSeries): ScalableFilterSeries = {
-    if (this.series.size > that.series.size)
-      this.mergeImpl(that, this)
-    else
-      this.mergeImpl(this, that)
-  }
-
-  private def mergeImpl(thiz: ScalableFilterSeries, that: ScalableFilterSeries): ScalableFilterSeries = {
-    val head = thiz.series.zip(that.series).map((tup: Tuple[SubFilter, SubFilter]) => tup.fst.merge(tup.snd)).positions
-    val concat = new Vector[SubFilter](that.series.size, head.combine(that.series.positions, (fst: SubFilter, snd: SubFilter) => fst))
-    new ScalableFilterSeries(concat)
+    val size = if (this.series.size > that.series.size) this.series.size else that.series.size
+    val positions = this.series.positions.combine(that.series.positions, (fst: SubFilter, snd: SubFilter) => fst.merge(snd))
+    new ScalableFilterSeries(new Vector[SubFilter](size, positions))
   }
 
   def compare(that: ScalableFilterSeries): Boolean = {
