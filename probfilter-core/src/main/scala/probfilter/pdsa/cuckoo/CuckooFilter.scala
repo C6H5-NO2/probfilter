@@ -118,5 +118,5 @@ final class CuckooFilter[E] private[cuckoo](val data: CuckooTable, val strategy:
 
   def copy(data: CuckooTable): CuckooFilter[E] = new CuckooFilter[E](data, strategy)
 
-  override def toString: String = data.toString
+  override def toString: String = s"CF($data)"
 }
