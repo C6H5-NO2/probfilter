@@ -14,25 +14,25 @@ class SubFilter(filter: GBloomFilter) extends CvRDT[SubFilter] {
   def compare(that: SubFilter): Boolean = this.filter.compare(that.filter)
 }
 
-class ScalableFilterSeries(series: Vector[SubFilter]) extends CvRDT[ScalableFilterSeries] {
+class FilterSeries(series: Vector[SubFilter]) extends CvRDT[FilterSeries] {
   override def reachable(): Boolean = {
     this.series.wellFormed() && this.series.forall((sf: SubFilter) => sf.reachable())
   }
 
-  override def compatible(that: ScalableFilterSeries): Boolean = {
+  override def compatible(that: FilterSeries): Boolean = {
     this.series.positions.zip(that.series.positions).values().forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compatible(tup.snd))
   }
 
-  def merge(that: ScalableFilterSeries): ScalableFilterSeries = {
+  def merge(that: FilterSeries): FilterSeries = {
     val size = if (this.series.size > that.series.size) this.series.size else that.series.size
     val positions = this.series.positions.combine(that.series.positions, (fst: SubFilter, snd: SubFilter) => fst.merge(snd))
-    new ScalableFilterSeries(new Vector[SubFilter](size, positions))
+    new FilterSeries(new Vector[SubFilter](size, positions))
   }
 
-  def compare(that: ScalableFilterSeries): Boolean = {
+  def compare(that: FilterSeries): Boolean = {
     this.series.size <= that.series.size &&
       this.series.zip(that.series).forall((tup: Tuple[SubFilter, SubFilter]) => tup.fst.compare(tup.snd))
   }
 }
 
-object ScalableFilterSeries extends CvRDTProof[ScalableFilterSeries]
+object FilterSeries extends CvRDTProof[FilterSeries]

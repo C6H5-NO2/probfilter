@@ -9,7 +9,7 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface Funnel<T> extends Serializable {
     /**
-     * Unpacks {@code from} as primitives in {@code into}.
+     * Unpacks {@code from} as primitives into {@code into}.
      */
     void funnel(T from, Sink into);
 }
