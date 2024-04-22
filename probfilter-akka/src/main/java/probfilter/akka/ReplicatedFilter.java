@@ -1,14 +1,14 @@
 package probfilter.akka;
 
 import akka.cluster.ddata.ReplicatedData;
-import probfilter.crdt.BaseFilter;
+import probfilter.crdt.immutable.CvFilter;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 
 /**
- * A type-erased wrapper for {@link probfilter.crdt.BaseFilter BaseFilter}.
+ * A type-erased adapter for {@link probfilter.crdt.immutable.CvFilter CvFilter}.
  *
  * @see probfilter.akka.ReplicatedFilterKey
  */
@@ -17,13 +17,13 @@ public final class ReplicatedFilter implements ReplicatedData, Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final BaseFilter filter;
+    private final CvFilter filter;
 
-    public ReplicatedFilter(BaseFilter<?, ?> filter) {
+    public ReplicatedFilter(CvFilter<?, ?> filter) {
         this.filter = filter;
     }
 
-    public <E, T> BaseFilter<E, T> as() {
+    public <E, T> CvFilter<E, T> typed() {
         return filter;
     }
 
@@ -32,15 +32,15 @@ public final class ReplicatedFilter implements ReplicatedData, Serializable {
     }
 
     public ReplicatedFilter add(Object elem) {
-        return new ReplicatedFilter((BaseFilter) filter.add(elem));
+        return new ReplicatedFilter((CvFilter) filter.add(elem));
     }
 
     public ReplicatedFilter remove(Object elem) {
-        return new ReplicatedFilter((BaseFilter) filter.remove(elem));
+        return new ReplicatedFilter((CvFilter) filter.remove(elem));
     }
 
     public ReplicatedFilter merge(ReplicatedFilter that) {
-        return new ReplicatedFilter((BaseFilter) this.filter.merge(that.filter));
+        return new ReplicatedFilter((CvFilter) this.filter.merge(that.filter));
     }
 
     @Override

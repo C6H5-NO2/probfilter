@@ -4,10 +4,10 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.ddata.Key
 import akka.cluster.ddata.typed.scaladsl.{DistributedData, Replicator}
-import probfilter.crdt.BaseFilter
+import probfilter.crdt.immutable.CvFilter
 
 
-final class FilterReplicator(private val key: Key[ReplicatedFilter], private val initial: BaseFilter[_, _]) {
+final class FilterReplicator(private val key: Key[ReplicatedFilter], private val initial: CvFilter[_, _]) {
   def create(): Behavior[Messages.Message] = Behaviors.setup[Messages.Message] { context =>
     // val node = DistributedData.apply(context.system).selfUniqueAddress
     DistributedData.withReplicatorMessageAdapter[Messages.Message, ReplicatedFilter] { adapter =>

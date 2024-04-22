@@ -1,6 +1,6 @@
 package probfilter.crdt.immutable
 
-import probfilter.crdt.Convergent
+import probfilter.crdt.{CausalHistory, Convergent}
 import probfilter.util.UnsignedNumber
 import probfilter.util.UnsignedVal._
 
@@ -9,25 +9,18 @@ import scala.collection.immutable.TreeMap
 
 /** An immutable version vector. */
 @SerialVersionUID(1L)
-final class VersionVector private(private val version: TreeMap[Short, Int]) extends Convergent[VersionVector] {
+final class VersionVector private(private val version: TreeMap[Short, Int]) extends CausalHistory with Convergent[VersionVector] {
   def this() = this(new TreeMap[Short, Int]()((x, y) => UnsignedNumber.compare(x, y)))
 
-  /**
-   * @param replicaId 16-bit unsigned id
-   * @return 32-bit unsigned timestamp
-   */
-  @inline def get(replicaId: Short): Int = version.getOrElse(replicaId, 0)
+  override def get(replicaId: Short): Int = version.getOrElse(replicaId, 0)
 
-  @inline def next(replicaId: Short): Int = get(replicaId) + 1
+  override def increase(replicaId: Short): VersionVector = new VersionVector(version.updated(replicaId, next(replicaId)))
 
-  @inline def inc(replicaId: Short): VersionVector = new VersionVector(version.updated(replicaId, next(replicaId)))
-
-  @inline def observes(replicaId: Short, timestamp: Int): Boolean = !(timestamp gtu get(replicaId))
-
-  override def lteq(that: VersionVector): Boolean = this.version.forall { case (id, ts) => that.observes(id, ts) }
+  override def lteq(that: VersionVector): Boolean = this.version.forall(tup => that.observes(tup._1, tup._2))
 
   override def merge(that: VersionVector): VersionVector = {
-    val v2 = this.version.foldLeft(that.version) { case (v2, (id, ts)) =>
+    val v2 = this.version.foldLeft(that.version) { (v2, tup) =>
+      val (id, ts) = tup
       if (ts gtu v2.getOrElse(id, 0))
         v2.updated(id, ts)
       else
@@ -37,5 +30,10 @@ final class VersionVector private(private val version: TreeMap[Short, Int]) exte
   }
 
   override def toString: String =
-    version.view.map { case (r, t) => s"${r.toUnsignedString}->${t.toUnsignedString}" }.mkString("V(", ", ", ")")
+    version.view.map(tup => s"${tup._1.toUString}->${tup._2.toUString}").mkString("V(", ", ", ")")
+}
+
+
+object VersionVector {
+  def empty: VersionVector = new VersionVector()
 }

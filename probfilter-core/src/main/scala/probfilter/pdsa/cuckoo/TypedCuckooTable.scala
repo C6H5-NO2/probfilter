@@ -26,20 +26,20 @@ trait TypedCuckooTable[@specialized(Specializable.Integral) T] extends CuckooTab
   def exists(index: Int, p: T => Boolean): Boolean = get(index).exists(p)
 
   /**
-   * @return a table with entry `elem` added to the bucket at `index`
-   * @throws java.lang.IllegalArgumentException if `elem` is zero
+   * @return a table with entry `entry` added to the bucket at `index`
+   * @throws java.lang.IllegalArgumentException if `entry` is zero
    */
   def add(index: Int, entry: T): TypedCuckooTable[T] = {
-    require(entry.asInstanceOf[Long] != 0L)
+    require(entry != 0L.asInstanceOf[T])
     set(index, TypedCuckooTable.arrayAppended[T](get(index), entry))
   }
 
   /**
-   * @return a table with entry `elem` removed from the bucket at `index`
-   * @throws java.lang.IllegalArgumentException if `elem` is zero
+   * @return a table with entry `entry` removed from the bucket at `index`
+   * @throws java.lang.IllegalArgumentException if `entry` is zero
    */
   def remove(index: Int, entry: T): TypedCuckooTable[T] = {
-    require(entry.asInstanceOf[Long] != 0L)
+    require(entry != 0L.asInstanceOf[T])
     set(index, get(index).filter(_ != entry))
   }
 

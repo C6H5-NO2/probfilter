@@ -13,7 +13,14 @@ final class SimpleCuckooStrategy[E] private[cuckoo]
 (implicit private val funnel: Funnel[_ >: E])
   extends CuckooStrategy[E] {
   override def tighten(): SimpleCuckooStrategy[E] =
-    new SimpleCuckooStrategy[E](capacity, numBuckets, bucketSize, maxIterations, fingerprintBits + 1, storageType)
+    new SimpleCuckooStrategy[E](capacity, numBuckets, bucketSize, maxIterations, fingerprintBits + 1, storageType match {
+      case EntryStorageType.BYTE =>
+        if (fingerprintBits < 8) EntryStorageType.BYTE else EntryStorageType.SHORT
+      case EntryStorageType.SHORT =>
+        if (fingerprintBits < 16) EntryStorageType.SHORT else throw new CuckooStrategy.FingerprintLengthExceededException()
+      case EntryStorageType.LONG =>
+        if (fingerprintBits < 16) EntryStorageType.LONG else throw new CuckooStrategy.FingerprintLengthExceededException()
+    })
 
   override def indexHash(elem: E): Int = (MurMurHash3.hash(elem) & Int.MaxValue).toInt % numBuckets
 

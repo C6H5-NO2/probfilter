@@ -1,88 +1,85 @@
 package probfilter.crdt.immutable
 
-import probfilter.crdt.BaseFilter
-import probfilter.pdsa.{CuckooFilterOps, CuckooStrategy, CuckooTable, LongCuckooEntry}
-
-import scala.collection.immutable.HashMap
+import probfilter.pdsa.cuckoo._
 
 
 /** An immutable observed-remove replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class ORCuckooFilter[E] private(val strategy: CuckooStrategy[E], val rid: Short, val version: VersionVector, val data: CuckooTable[Long]) extends BaseFilter[E, ORCuckooFilter[E]] {
-  def this(strategy: CuckooStrategy[E], rid: Short) = this(strategy, rid, new VersionVector(), CuckooTable.empty[Long])
+final class ORCuckooFilter[E] private
+(val state: CuckooFilter[E], val hist: VersionVector, val rid: Short)
+  extends CvFilter[E, ORCuckooFilter[E]] {
+  def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
 
-  override def size(): Int = data.size
+  require(state.strategy.storageType() == EntryStorageType.LONG, s"ORCuckooFilter: ${state.strategy.storageType()} is not LONG")
+
+  override def size(): Int = state.size()
+
+  override def capacity(): Int = state.capacity()
+
+  override def fpp(): Double = state.fpp()
 
   override def contains(elem: E): Boolean = {
-    val triple = strategy.getCuckooTriple(elem)
-    val p = (e: Long) => LongCuckooEntry.from(e).fingerprint == triple.fp
-    data.at(triple.i).iterator.exists(p) || data.at(triple.j).iterator.exists(p)
+    val triple = state.strategy.hashAll(elem)
+    val p = (e: Long) => VersionedEntry.extract(e) == triple.fp
+    state.data.typed[Long].exists(triple.i, p) || state.data.typed[Long].exists(triple.j, p)
   }
 
   override def add(elem: E): ORCuckooFilter[E] = {
-    val triple = strategy.getCuckooTriple(elem)
-    val entry = LongCuckooEntry.parse(triple.fp, rid, version.next(rid))
-    val newData = CuckooFilterOps.add(triple, entry, data)(strategy, elem)
-    new ORCuckooFilter(strategy, rid, version.inc(rid), newData)
+    val triple = state.strategy.hashAll(elem)
+    val entry = VersionedEntry.parse(triple.fp, rid, hist.next(rid))
+    val newState = state.add[Long](triple, entry, elem)
+    val newHist = hist.increase(rid)
+    copy(newState, newHist)
   }
 
   override def remove(elem: E): ORCuckooFilter[E] = {
-    val triple = strategy.getCuckooTriple(elem)
-    val p = (e: Long) => LongCuckooEntry.from(e).fingerprint == triple.fp
-    val ai = data.at(triple.i).iterator.filter(p).toArray
-    val aj = data.at(triple.j).iterator.filter(p).toArray
-    val len = ai.length + aj.length
-    if (len == 0)
-      return this
-    val rand = CuckooFilterOps.rand(len)
-    if (rand < ai.length) {
-      val e = ai.apply(rand)
-      val newData = data.at(triple.i).remove(e)
-      new ORCuckooFilter(strategy, rid, version, newData)
-    } else {
-      val e = aj.apply(rand - ai.length)
-      val newData = data.at(triple.j).remove(e)
-      new ORCuckooFilter(strategy, rid, version, newData)
-    }
+    val newState = state.remove(elem)
+    copy(newState)
   }
 
   override def lteq(that: ORCuckooFilter[E]): Boolean = ???
 
   override def merge(that: ORCuckooFilter[E]): ORCuckooFilter[E] = {
-    val buffer = (0 until strategy.numBuckets).foldLeft(HashMap.empty[Int, Array[Long]]) { (buffer, i) =>
-      val thisBucket = this.data.at(i).iterator.toArray
-      val thatBucket = that.data.at(i).iterator.toArray
-
-      val s124 = thisBucket.iterator.filter { e =>
-        if (thatBucket.contains(e)) {
-          true // S1
+    val thisData = this.state.data.typed[Long]
+    val thatData = that.state.data.typed[Long]
+    val newData = thisData.zipFold(thatData)(TypedCuckooTable.empty[Long]) { (newData, thisBucket, thatBucket, index) =>
+      val s124 = thisBucket.filter { entry =>
+        if (thatBucket.contains(entry)) {
+          true // S1: IN (this.state INTERSECT that.state)
         } else {
-          val ce = LongCuckooEntry.from(e)
-          if (!that.version.observes(ce.replicaId, ce.timestamp)) {
-            true // S2
+          val ce = VersionedEntry.create(entry)
+          if (!that.hist.observes(ce.replicaId, ce.timestamp)) {
+            true // S2: IN (this.state DIFF that.state) AND NOT IN that.hist
           } else {
-            val j = strategy.getAltBucket(ce.fingerprint, i)
-            that.data.at(j).contains(e) // S4
+            val i2 = this.state.strategy.altIndexOf(index, ce.fingerprint)
+            thatData.contains(i2, entry) // S4: IN this.state AND displaced() IN that.state
           }
         }
       }
 
-      val s3 = thatBucket.iterator.filter { e =>
-        if (!thisBucket.contains(e)) {
-          val ce = LongCuckooEntry.from(e)
-          !this.version.observes(ce.replicaId, ce.timestamp) // S3
+      val s3 = thatBucket.filter { entry =>
+        if (!thisBucket.contains(entry)) {
+          val ce = VersionedEntry.create(entry)
+          !this.hist.observes(ce.replicaId, ce.timestamp) // S3: IN (that.state DIFF this.state) AND NOT IN this.hist
         } else {
           false
         }
       }
 
-      val s = (s124 concat s3).toArray
-      if (s.isEmpty) buffer else buffer.updated(i, s)
+      val s = s124.concat(s3)
+      newData.set(index, s)
     }
 
-    import probfilter.pdsa.MapCuckooTable // todo
-    val newData = new MapCuckooTable(buffer)
-    val newVersion = this.version merge that.version
-    new ORCuckooFilter(strategy, rid, newVersion, newData)
+    val newState = state.copy(newData)
+    val newHist = this.hist.merge(that.hist)
+    copy(newState, newHist)
   }
+
+  def copy(state: CuckooFilter[E]): ORCuckooFilter[E] = new ORCuckooFilter[E](state, hist, rid)
+
+  def copy(hist: VersionVector): ORCuckooFilter[E] = new ORCuckooFilter[E](state, hist, rid)
+
+  def copy(state: CuckooFilter[E], hist: VersionVector): ORCuckooFilter[E] = new ORCuckooFilter[E](state, hist, rid)
+
+  override def toString: String = s"ORCF($state, $hist, $rid)"
 }

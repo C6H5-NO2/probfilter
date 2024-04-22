@@ -1,55 +1,45 @@
 package probfilter.crdt.immutable
 
-import probfilter.crdt.BaseFilter
-import probfilter.pdsa.{CuckooFilterOps, CuckooStrategy, CuckooTable}
+import probfilter.pdsa.cuckoo.{CuckooFilter, CuckooStrategy}
 
 
 /** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class GCuckooFilter[E] private
-// todo: wrap Short -> Byte | Short
-(val strategy: CuckooStrategy[E], val data: CuckooTable[Short]) extends BaseFilter[E, GCuckooFilter[E]] {
-  def this(strategy: CuckooStrategy[E]) = this(strategy, CuckooTable.empty[Short])
+final class GCuckooFilter[E] private(val state: CuckooFilter[E]) extends CvFilter[E, GCuckooFilter[E]] {
+  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilter[E](strategy))
 
-  override def size(): Int = data.size
+  override def size(): Int = state.size()
 
-  private def containsTriple(triple: CuckooStrategy.Triple): Boolean = {
-    data.at(triple.i).contains(triple.fp) || data.at(triple.j).contains(triple.fp)
-  }
+  override def capacity(): Int = state.capacity()
 
-  override def contains(elem: E): Boolean = {
-    val triple = strategy.getCuckooTriple(elem)
-    containsTriple(triple)
-  }
+  override def fpp(): Double = state.fpp()
 
-  override def add(elem: E): GCuckooFilter[E] = {
-    val triple = strategy.getCuckooTriple(elem)
-    if (containsTriple(triple))
-      return this
-    val newData = CuckooFilterOps.add(triple, triple.fp, data)(strategy, elem)
-    new GCuckooFilter(strategy, newData)
-  }
+  override def contains(elem: E): Boolean = state.contains(elem)
+
+  override def add(elem: E): GCuckooFilter[E] = if (contains(elem)) this else copy(state.add(elem))
 
   override def lteq(that: GCuckooFilter[E]): Boolean = ???
 
   override def merge(that: GCuckooFilter[E]): GCuckooFilter[E] = {
-    val newData = (0 until strategy.numBuckets).foldLeft(this.data) { (newData, i) =>
-      val thisBucket = this.data.at(i)
-      val thatBucket = that.data.at(i)
-      thatBucket.iterator.foldLeft(newData) { (s, e) =>
-        if (thisBucket.contains(e)) {
-          s
+    val thisData = this.state.data.typed
+    val thatData = that.state.data.typed
+    val newData = thisData.zipFold(thatData)(thisData) { (newData, thisBucket, thatBucket, index) =>
+      thatBucket.foldLeft(newData) { (newData, entry) =>
+        if (thisBucket.contains(entry)) {
+          newData
         } else {
-          // todo: make (entry -> fp -> entry) a function
-          val alt = strategy.getAltBucket(e, i)
-          if (this.data.at(alt).contains(e))
-            s
+          val altIndex = this.state.strategy.altIndexOf(index, entry)
+          if (thisData.contains(altIndex, entry))
+            newData
           else
-            s.at(i).add(e)
+            newData.add(altIndex, entry)
         }
       }
     }
-
-    new GCuckooFilter[E](this.strategy, newData)
+    copy(state.copy(newData))
   }
+
+  def copy(state: CuckooFilter[E]): GCuckooFilter[E] = new GCuckooFilter[E](state)
+
+  override def toString: String = s"GCF($state)"
 }

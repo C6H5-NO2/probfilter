@@ -31,5 +31,5 @@ final class BloomFilter[E] private[bloom](val data: BitSet, val strategy: BloomS
 
   def copy(data: BitSet) = new BloomFilter[E](data, strategy)
 
-  override def toString: String = data.toString
+  override def toString: String = s"BF($data)"
 }
