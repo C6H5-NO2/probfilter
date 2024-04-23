@@ -10,7 +10,7 @@ sealed trait FingerprintExtractor {
 
 object FingerprintExtractor {
   private object ByteExtractor extends FingerprintExtractor {
-    override def extract(data: Any): Short = (data.asInstanceOf[Long] & 0xffL).toShort
+    override def extract(data: Any): Short = (data.asInstanceOf[Byte] & 0xffL).toShort
   }
 
   private object ShortExtractor extends FingerprintExtractor {

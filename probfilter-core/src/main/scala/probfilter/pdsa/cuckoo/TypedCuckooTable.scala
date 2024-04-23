@@ -31,16 +31,27 @@ trait TypedCuckooTable[@specialized(Specializable.Integral) T] extends CuckooTab
    */
   def add(index: Int, entry: T): TypedCuckooTable[T] = {
     require(entry != 0L.asInstanceOf[T])
-    set(index, TypedCuckooTable.arrayAppended[T](get(index), entry))
+    val arr = get(index)
+    val dest = Array.copyOf[T](arr, arr.length + 1)
+    dest.update(arr.length, entry)
+    set(index, dest)
   }
 
   /**
-   * @return a table with entry `entry` removed from the bucket at `index`
+   * @return a table with (at most) 1 instance of entry `entry` removed from the bucket at `index`
    * @throws java.lang.IllegalArgumentException if `entry` is zero
    */
   def remove(index: Int, entry: T): TypedCuckooTable[T] = {
     require(entry != 0L.asInstanceOf[T])
-    set(index, get(index).filter(_ != entry))
+    val arr = get(index)
+    val idx = arr.indexWhere(_ == entry)
+    if (idx == -1) {
+      this
+    } else {
+      val dest = Array.copyOf[T](arr, arr.length - 1)
+      System.arraycopy(arr, idx + 1, dest, idx, arr.length - idx - 1)
+      set(index, dest)
+    }
   }
 
   /**
@@ -52,7 +63,9 @@ trait TypedCuckooTable[@specialized(Specializable.Integral) T] extends CuckooTab
   def replace(index: Int, entry: T, victimIndex: Int): (T, TypedCuckooTable[T]) = {
     val arr = get(index)
     val replaced = arr.apply(victimIndex)
-    val newTable = set(index, TypedCuckooTable.arrayUpdated[T](arr, victimIndex, entry))
+    val dest = arr.clone()
+    dest.update(victimIndex, entry)
+    val newTable = set(index, dest)
     (replaced, newTable)
   }
 
@@ -80,18 +93,4 @@ trait TypedCuckooTable[@specialized(Specializable.Integral) T] extends CuckooTab
 
 object TypedCuckooTable {
   def empty[@specialized(Specializable.Integral) T: ClassTag]: TypedCuckooTable[T] = MapCuckooTable.empty[T]
-
-  /** Equivalent to [[scala.collection.ArrayOps.appended]] without requiring [[scala.reflect.ClassTag]]. */
-  private def arrayAppended[@specialized(Specializable.Integral) T](array: Array[T], elem: T): Array[T] = {
-    val dest = Array.copyOf[T](array, array.length + 1)
-    dest.update(array.length, elem)
-    dest
-  }
-
-  /** Equivalent to [[scala.collection.ArrayOps.updated]] without requiring [[scala.reflect.ClassTag]]. */
-  private def arrayUpdated[@specialized(Specializable.Integral) T](array: Array[T], index: Int, elem: T): Array[T] = {
-    val dest = array.clone()
-    dest.update(index, elem)
-    dest
-  }
 }
