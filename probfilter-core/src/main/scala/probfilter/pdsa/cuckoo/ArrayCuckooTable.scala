@@ -47,6 +47,16 @@ final class ArrayCuckooTable[@specialized(Specializable.Integral) T: ClassTag] p
     new ArrayCuckooTable[T](newData, newOverflowed, newSize, bucketSize)
   }
 
+  def toMapCuckooTable: MapCuckooTable[T] = {
+    var mapTable: TypedCuckooTable[T] = MapCuckooTable.empty[T]
+    var i = 0
+    while (i < numBuckets) {
+      mapTable = mapTable.set(i, get(i))
+      i += 1
+    }
+    mapTable.asInstanceOf[MapCuckooTable[T]]
+  }
+
   override def toString: String = {
     new AbstractIterator[Array[T]] {
       var i = 0

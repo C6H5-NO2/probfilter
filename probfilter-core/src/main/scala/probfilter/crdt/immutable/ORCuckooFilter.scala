@@ -10,7 +10,10 @@ final class ORCuckooFilter[E] private
   extends CvFilter[E, ORCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
 
-  require(state.strategy.storageType() == EntryStorageType.LONG, s"ORCuckooFilter: ${state.strategy.storageType()} is not LONG")
+  {
+    val storageType = state.strategy.storageType()
+    require(storageType == EntryStorageType.LONG, s"ORCuckooFilter.<init>: storage type $storageType is not LONG")
+  }
 
   override def size(): Int = state.size()
 
