@@ -12,15 +12,21 @@ final class SimpleCuckooStrategy[E] private[cuckoo]
  val maxIterations: Int, val fingerprintBits: Int, val storageType: EntryStorageType)
 (implicit private val funnel: Funnel[_ >: E])
   extends CuckooStrategy[E] {
-  override def tighten(): SimpleCuckooStrategy[E] =
-    new SimpleCuckooStrategy[E](capacity, numBuckets, bucketSize, maxIterations, fingerprintBits + 1, storageType match {
+  override def tighten(): SimpleCuckooStrategy[E] = {
+    val newCapacity = capacity + (capacity >>> 1)
+    val newFingerprintBits = fingerprintBits + 1
+    val newStorageType = storageType match {
       case EntryStorageType.BYTE =>
         if (fingerprintBits < 8) EntryStorageType.BYTE else EntryStorageType.SHORT
       case EntryStorageType.SHORT =>
         if (fingerprintBits < 16) EntryStorageType.SHORT else throw new CuckooStrategy.FingerprintLengthExceededException()
+      case EntryStorageType.INT =>
+        if (fingerprintBits < 8) EntryStorageType.INT else EntryStorageType.LONG
       case EntryStorageType.LONG =>
         if (fingerprintBits < 16) EntryStorageType.LONG else throw new CuckooStrategy.FingerprintLengthExceededException()
-    })
+    }
+    SimpleCuckooStrategy.create(newCapacity, bucketSize, maxIterations, newFingerprintBits, newStorageType)
+  }
 
   override def indexHash(elem: E): Int = (MurMurHash3.hash(elem) & Int.MaxValue).toInt % numBuckets
 
@@ -57,31 +63,33 @@ object SimpleCuckooStrategy {
     val numBuckets = Try.apply(IntMath.ceilingPowerOfTwo(capacity / bucketSize))
     require(numBuckets.isSuccess, s"SimpleCuckooStrategy.create: numBuckets = ${capacity / bucketSize}")
     require(maxIterations >= 0, s"SimpleCuckooStrategy.create: maxIterations = $maxIterations < 0")
+    val storageTypeErrMsg = () => s"SimpleCuckooStrategy.create: storageType $storageType incompatible with $fingerprintBits bits"
     storageType match {
-      case EntryStorageType.BYTE => require(0 < fingerprintBits && fingerprintBits <= 8)
-      case EntryStorageType.SHORT => require(8 < fingerprintBits && fingerprintBits <= 16)
-      case EntryStorageType.LONG => require(0 < fingerprintBits && fingerprintBits <= 16)
+      case EntryStorageType.BYTE => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
+      case EntryStorageType.SHORT => require(8 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
+      case EntryStorageType.INT => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
+      case EntryStorageType.LONG => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
     }
+    val fpReqErrMsg = "SimpleCuckooStrategy.create: 4 ^ (bucketSize * fingerprintBits) < \\Omega(capacity)"
+    require(2 * bucketSize * fingerprintBits >= math.floor(math.log(capacity) / math.log(2)), fpReqErrMsg)
     new SimpleCuckooStrategy[E](capacity, numBuckets.get, bucketSize, maxIterations, fingerprintBits, storageType)(funnel)
   }
 
-  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int)
-               (implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
+  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
     create(capacity, bucketSize, maxIterations, 8, EntryStorageType.BYTE)
   }
 
-  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, storageType: EntryStorageType)
-               (implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
+  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, storageType: EntryStorageType)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
     val fingerprintBits = storageType match {
       case EntryStorageType.BYTE => 8
       case EntryStorageType.SHORT => 16
+      case EntryStorageType.INT => 8
       case EntryStorageType.LONG => 8
     }
     create(capacity, bucketSize, maxIterations, fingerprintBits, storageType)
   }
 
-  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int)
-               (implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
+  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
     val storageType = if (fingerprintBits <= 8) EntryStorageType.BYTE else EntryStorageType.SHORT
     create(capacity, bucketSize, maxIterations, fingerprintBits, storageType)
   }

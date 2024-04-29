@@ -8,7 +8,7 @@ final class SimpleBloomStrategy[E] private[bloom]
 (val capacity: Int, val numBits: Int, val numHashes: Int, private[bloom] val desiredFpp: Double)
 (implicit private val funnel: Funnel[_ >: E])
   extends KMBloomStrategy[E] {
-  override def tighten(): SimpleBloomStrategy[E] = SimpleBloomStrategy.create(capacity, desiredFpp / 2.0)
+  override def tighten(): SimpleBloomStrategy[E] = SimpleBloomStrategy.create(capacity + (capacity >>> 1), desiredFpp / 2.0)
 
   override def hash1(elem: E): Int = MurMurHash3.hash(elem).toInt
 

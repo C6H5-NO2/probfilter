@@ -37,7 +37,6 @@ object VersionedEntry {
     new VersionedEntry(data)
   }
 
-  /** @see [[probfilter.pdsa.cuckoo.VersionedEntry.create]] */
   @inline def parse(fingerprint: Short, replicaId: Short, timestamp: Int): Long = {
     val fp = (fingerprint.toLong & 0xffffL) << 48
     val id = (replicaId.toLong & 0xffffL) << 32

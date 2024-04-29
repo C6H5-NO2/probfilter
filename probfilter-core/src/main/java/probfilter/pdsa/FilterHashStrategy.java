@@ -10,6 +10,7 @@ public interface FilterHashStrategy extends Serializable {
 
     /**
      * @return a new instance of {@link probfilter.pdsa.FilterHashStrategy} with fpp half that of {@code this}
+     * @implNote {@code capacity} may also be increased.
      */
     FilterHashStrategy tighten();
 }
