@@ -27,7 +27,7 @@ final class ScGCuckooFilter[E] private
         if (filter.size() < filter.capacity()) {
           val res = filter.tryAdd(elem)
           if (res.isSuccess) {
-            val added = res.get.asInstanceOf[GCuckooFilter[E]]
+            val added = res.get
             val updated = expanded.set(i, added)
             return copy(updated)
           }

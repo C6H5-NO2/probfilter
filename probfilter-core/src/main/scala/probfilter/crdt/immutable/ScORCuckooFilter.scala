@@ -28,7 +28,7 @@ final class ScORCuckooFilter[E] private
       if (filter.size() < filter.capacity()) {
         val res = filter.tryAdd(elem)
         if (res.isSuccess) {
-          val added = res.get.asInstanceOf[ORCuckooFilter[E]]
+          val added = res.get
           val updated = copied.set(i, added)
           val updated2 = updated.map(f => f.copy(added.hist))
           return copy(updated2)

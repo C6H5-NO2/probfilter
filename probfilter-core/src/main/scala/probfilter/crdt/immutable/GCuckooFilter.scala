@@ -2,6 +2,8 @@ package probfilter.crdt.immutable
 
 import probfilter.pdsa.cuckoo.{CuckooFilter, CuckooStrategy}
 
+import scala.util.Try
+
 
 /** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
@@ -17,6 +19,8 @@ final class GCuckooFilter[E] private(val state: CuckooFilter[E]) extends CvFilte
   override def contains(elem: E): Boolean = state.contains(elem)
 
   override def add(elem: E): GCuckooFilter[E] = if (contains(elem)) this else copy(state.add(elem))
+
+  override def tryAdd(elem: E): Try[GCuckooFilter[E]] = Try.apply(add(elem))
 
   override def lteq(that: GCuckooFilter[E]): Boolean = ???
 

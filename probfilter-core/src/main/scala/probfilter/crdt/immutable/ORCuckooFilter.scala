@@ -2,6 +2,8 @@ package probfilter.crdt.immutable
 
 import probfilter.pdsa.cuckoo._
 
+import scala.util.Try
+
 
 /** An immutable observed-remove replicated cuckoo filter. */
 @SerialVersionUID(1L)
@@ -34,6 +36,8 @@ final class ORCuckooFilter[E] private
     val newHist = hist.increase(rid)
     copy(newState, newHist)
   }
+
+  override def tryAdd(elem: E): Try[ORCuckooFilter[E]] = Try.apply(add(elem))
 
   override def remove(elem: E): ORCuckooFilter[E] = {
     val newState = state.remove(elem)
