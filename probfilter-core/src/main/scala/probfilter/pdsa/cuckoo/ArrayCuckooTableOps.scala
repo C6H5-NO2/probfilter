@@ -5,7 +5,7 @@ import probfilter.util.ArrayOpsEx
 import scala.collection.AbstractIterator
 
 
-object ArrayCuckooTableOps {
+private[cuckoo] object ArrayCuckooTableOps {
   def numBuckets(data: Array[_], bucketSize: Int): Int = data.length / bucketSize
 
   def get[T](data: Array[T], overflowed: TypedCuckooTableOps[T], bucketSize: Int, index: Int): Array[T] = {

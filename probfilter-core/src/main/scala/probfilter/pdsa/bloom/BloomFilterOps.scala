@@ -3,7 +3,7 @@ package probfilter.pdsa.bloom
 import scala.collection.BitSet
 
 
-object BloomFilterOps {
+private[bloom] object BloomFilterOps {
   def size(data: BitSet, strategy: BloomStrategy[_]): Int = {
     val n = data.size
     val m = strategy.numBits()

@@ -6,7 +6,7 @@ import scala.collection.SortedMap
 import scala.reflect.ClassTag
 
 
-object MapCuckooTableOps {
+private[cuckoo] object MapCuckooTableOps {
   def numBuckets(data: SortedMap[Int, _]): Int = if (data.isEmpty) 0 else data.lastKey + 1
 
   def get[T: ClassTag](data: SortedMap[Int, Array[T]], index: Int): Array[T] = data.getOrElse(index, Array.empty[T])
