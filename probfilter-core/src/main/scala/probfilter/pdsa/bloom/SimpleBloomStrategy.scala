@@ -4,8 +4,8 @@ import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 
 
 @SerialVersionUID(1L)
-final class SimpleBloomStrategy[E] private[bloom]
-(val capacity: Int, val numBits: Int, val numHashes: Int, private[bloom] val desiredFpp: Double)
+final class SimpleBloomStrategy[E] private
+(val capacity: Int, val numBits: Int, val numHashes: Int, private val desiredFpp: Double)
 (implicit private val funnel: Funnel[_ >: E])
   extends KMBloomStrategy[E] {
   override def tighten(): SimpleBloomStrategy[E] = SimpleBloomStrategy.create(capacity + (capacity >>> 1), desiredFpp / 2.0)
