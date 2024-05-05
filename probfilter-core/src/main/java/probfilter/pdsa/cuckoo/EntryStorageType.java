@@ -2,5 +2,5 @@ package probfilter.pdsa.cuckoo;
 
 
 public enum EntryStorageType {
-    BYTE, SHORT, @Deprecated INT, LONG
+    SIMPLE_BYTE, SIMPLE_SHORT, VERSIONED_INT, VERSIONED_LONG
 }

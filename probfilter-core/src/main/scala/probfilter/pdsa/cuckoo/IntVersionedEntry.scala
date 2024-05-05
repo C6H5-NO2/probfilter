@@ -4,7 +4,6 @@ import probfilter.util.UnsignedNumber
 import probfilter.util.UnsignedVal._
 
 
-@Deprecated
 final class IntVersionedEntry(private val data: Int) extends AnyVal {
   /** @return 8-bit unsigned fingerprint */
   @inline def fingerprint: Short = ((data >>> 24) & 0xff).toShort

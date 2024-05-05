@@ -8,7 +8,7 @@ import probfilter.util.UnsignedVal._
  * An immutable wrapper of 64-bit unsigned long representing an entry in the cuckoo table.
  * This class is a value class which avoids runtime object allocation in Scala.
  */
-final class VersionedEntry(private val data: Long) extends AnyVal {
+final class LongVersionedEntry(private val data: Long) extends AnyVal {
   /** @return 16-bit unsigned fingerprint */
   @inline def fingerprint: Short = ((data >>> 48) & 0xffffL).toShort
 
@@ -19,7 +19,7 @@ final class VersionedEntry(private val data: Long) extends AnyVal {
   @inline def timestamp: Int = (data & 0xffff_ffffL).toInt
 
   /** @return `true` if `this` is partially less than `that`; `false` otherwise */
-  @inline def lt(that: VersionedEntry): Boolean =
+  @inline def lt(that: LongVersionedEntry): Boolean =
     ((data >>> 32) == (that.toLong >>> 32)) && (UnsignedNumber.compare(data, that.toLong) < 0)
 
   @inline def toLong: Long = data
@@ -29,12 +29,12 @@ final class VersionedEntry(private val data: Long) extends AnyVal {
 }
 
 
-object VersionedEntry {
-  @inline def create(data: Long): VersionedEntry = new VersionedEntry(data)
+object LongVersionedEntry {
+  @inline def create(data: Long): LongVersionedEntry = new LongVersionedEntry(data)
 
-  @inline def create(fingerprint: Short, replicaId: Short, timestamp: Int): VersionedEntry = {
+  @inline def create(fingerprint: Short, replicaId: Short, timestamp: Int): LongVersionedEntry = {
     val data = parse(fingerprint, replicaId, timestamp)
-    new VersionedEntry(data)
+    new LongVersionedEntry(data)
   }
 
   @inline def parse(fingerprint: Short, replicaId: Short, timestamp: Int): Long = {

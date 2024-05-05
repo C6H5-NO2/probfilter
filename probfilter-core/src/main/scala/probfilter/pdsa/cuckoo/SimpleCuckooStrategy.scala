@@ -7,7 +7,7 @@ import scala.util.Try
 
 
 @SerialVersionUID(1L)
-final class SimpleCuckooStrategy[E] private[cuckoo]
+final class SimpleCuckooStrategy[E] private
 (val capacity: Int, val numBuckets: Int, val bucketSize: Int,
  val maxIterations: Int, val fingerprintBits: Int, val storageType: EntryStorageType)
 (implicit private val funnel: Funnel[_ >: E])
@@ -16,14 +16,14 @@ final class SimpleCuckooStrategy[E] private[cuckoo]
     val newCapacity = capacity + (capacity >>> 1)
     val newFingerprintBits = fingerprintBits + 1
     val newStorageType = storageType match {
-      case EntryStorageType.BYTE =>
-        if (fingerprintBits < 8) EntryStorageType.BYTE else EntryStorageType.SHORT
-      case EntryStorageType.SHORT =>
-        if (fingerprintBits < 16) EntryStorageType.SHORT else throw new CuckooStrategy.FingerprintLengthExceededException()
-      case EntryStorageType.INT =>
-        if (fingerprintBits < 8) EntryStorageType.INT else EntryStorageType.LONG
-      case EntryStorageType.LONG =>
-        if (fingerprintBits < 16) EntryStorageType.LONG else throw new CuckooStrategy.FingerprintLengthExceededException()
+      case EntryStorageType.SIMPLE_BYTE =>
+        if (fingerprintBits < 8) EntryStorageType.SIMPLE_BYTE else EntryStorageType.SIMPLE_SHORT
+      case EntryStorageType.SIMPLE_SHORT =>
+        if (fingerprintBits < 16) EntryStorageType.SIMPLE_SHORT else throw new CuckooStrategy.FingerprintLengthExceededException()
+      case EntryStorageType.VERSIONED_INT =>
+        if (fingerprintBits < 8) EntryStorageType.VERSIONED_INT else EntryStorageType.VERSIONED_LONG
+      case EntryStorageType.VERSIONED_LONG =>
+        if (fingerprintBits < 16) EntryStorageType.VERSIONED_LONG else throw new CuckooStrategy.FingerprintLengthExceededException()
     }
     SimpleCuckooStrategy.create(newCapacity, bucketSize, maxIterations, newFingerprintBits, newStorageType)
   }
@@ -52,23 +52,22 @@ object SimpleCuckooStrategy {
    * @param bucketSize desired number of slots per bucket
    * @param maxIterations maximum number of attempts to cuckoo displace
    * @param fingerprintBits bit length of fingerprint
-   * @param storageType `BYTE`/`SHORT` for simple fingerprint; `LONG` for versioned entry
+   * @param storageType `SIMPLE_*` for simple fingerprint; `VERSIONED_*` for versioned entry
    * @param funnel the funnel object to use
    * @throws java.lang.IllegalArgumentException if any argument is illegal
    */
-  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int, storageType: EntryStorageType)
-               (implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
+  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int, storageType: EntryStorageType)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
     require(capacity > 0, s"SimpleCuckooStrategy.create: capacity = $capacity not > 0")
     require(1 <= bucketSize && bucketSize <= 8, s"SimpleCuckooStrategy.create: bucketSize = $bucketSize !in [1, 8]")
     val numBuckets = Try.apply(IntMath.ceilingPowerOfTwo(capacity / bucketSize))
     require(numBuckets.isSuccess, s"SimpleCuckooStrategy.create: numBuckets = ${capacity / bucketSize}")
     require(maxIterations >= 0, s"SimpleCuckooStrategy.create: maxIterations = $maxIterations < 0")
-    val storageTypeErrMsg = () => s"SimpleCuckooStrategy.create: storageType $storageType incompatible with $fingerprintBits bits"
+    val storageTypeErrMsg = () => s"SimpleCuckooStrategy.create: storageType $storageType incompatible with fingerprint of $fingerprintBits bits"
     storageType match {
-      case EntryStorageType.BYTE => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
-      case EntryStorageType.SHORT => require(8 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
-      case EntryStorageType.INT => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
-      case EntryStorageType.LONG => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
+      case EntryStorageType.SIMPLE_BYTE => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
+      case EntryStorageType.SIMPLE_SHORT => require(8 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
+      case EntryStorageType.VERSIONED_INT => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
+      case EntryStorageType.VERSIONED_LONG => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
     }
     val fpReqErrMsg = "SimpleCuckooStrategy.create: 4 ^ (bucketSize * fingerprintBits) < \\Omega(capacity)"
     require(2 * bucketSize * fingerprintBits >= math.floor(math.log(capacity) / math.log(2)), fpReqErrMsg)
@@ -76,21 +75,21 @@ object SimpleCuckooStrategy {
   }
 
   def create[E](capacity: Int, bucketSize: Int, maxIterations: Int)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
-    create(capacity, bucketSize, maxIterations, 8, EntryStorageType.BYTE)
+    create(capacity, bucketSize, maxIterations, 8, EntryStorageType.SIMPLE_BYTE)
+  }
+
+  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
+    val storageType = if (fingerprintBits <= 8) EntryStorageType.SIMPLE_BYTE else EntryStorageType.SIMPLE_SHORT
+    create(capacity, bucketSize, maxIterations, fingerprintBits, storageType)
   }
 
   def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, storageType: EntryStorageType)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
     val fingerprintBits = storageType match {
-      case EntryStorageType.BYTE => 8
-      case EntryStorageType.SHORT => 16
-      case EntryStorageType.INT => 8
-      case EntryStorageType.LONG => 8
+      case EntryStorageType.SIMPLE_BYTE => 8
+      case EntryStorageType.SIMPLE_SHORT => 16
+      case EntryStorageType.VERSIONED_INT => 8
+      case EntryStorageType.VERSIONED_LONG => 8
     }
-    create(capacity, bucketSize, maxIterations, fingerprintBits, storageType)
-  }
-
-  def create[E](capacity: Int, bucketSize: Int, maxIterations: Int, fingerprintBits: Int)(implicit funnel: Funnel[_ >: E]): SimpleCuckooStrategy[E] = {
-    val storageType = if (fingerprintBits <= 8) EntryStorageType.BYTE else EntryStorageType.SHORT
     create(capacity, bucketSize, maxIterations, fingerprintBits, storageType)
   }
 }
