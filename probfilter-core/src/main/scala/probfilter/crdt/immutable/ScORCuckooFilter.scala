@@ -54,7 +54,7 @@ final class ScORCuckooFilter[E] private
     if (state.series.isEmpty)
       new ORCuckooFilter[E](strategy.tighten(), rid)
     else
-      new ORCuckooFilter[E](state.series.last.state.strategy.tighten(), rid)
+      new ORCuckooFilter[E](state.series.last.strategy.tighten(), rid)
   }
 
   override protected def copy(state: Series[ORCuckooFilter[E]]): ScORCuckooFilter[E] = {

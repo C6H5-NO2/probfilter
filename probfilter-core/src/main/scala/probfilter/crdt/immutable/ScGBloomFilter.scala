@@ -26,7 +26,7 @@ final class ScGBloomFilter[E] private
     if (state.series.isEmpty)
       new GBloomFilter[E](strategy.tighten())
     else
-      new GBloomFilter[E](state.series.last.state.strategy.tighten())
+      new GBloomFilter[E](state.series.last.strategy.tighten())
   }
 
   override protected def copy(state: Series[GBloomFilter[E]]): ScGBloomFilter[E] = new ScGBloomFilter[E](state, strategy)

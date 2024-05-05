@@ -13,7 +13,9 @@ public interface Convergent<T> extends Serializable {
      * @return {@code true} if {@code this} is partially less than or equal to {@code that} in the join semilattice
      * @apiNote It is not mandatory to fully implement this function.
      */
-    boolean lteq(T that);
+    default boolean lteq(T that) {
+        throw new RuntimeException(new scala.NotImplementedError(getClass().getName() + "#lteq"));
+    }
 
     /**
      * @deprecated The naming is not very clear; use {@link probfilter.crdt.Convergent#lteq(T)} instead.

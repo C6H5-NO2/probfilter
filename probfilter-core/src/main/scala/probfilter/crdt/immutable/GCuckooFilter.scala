@@ -1,14 +1,25 @@
 package probfilter.crdt.immutable
 
-import probfilter.pdsa.cuckoo.{CuckooFilter, CuckooStrategy}
+import probfilter.pdsa.cuckoo.immutable.CuckooFilter
+import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType}
 
 import scala.util.Try
 
 
 /** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class GCuckooFilter[E] private(val state: CuckooFilter[E]) extends CvFilter[E, GCuckooFilter[E]] {
+final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends CvFilter[E, GCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E]) = this(new CuckooFilter[E](strategy))
+
+  {
+    val storageType = state.strategy.storageType()
+    require(
+      storageType.ordinal() <= EntryStorageType.SIMPLE_SHORT.ordinal(),
+      s"GCuckooFilter.<init>: storage type $storageType is not SIMPLE_*"
+    )
+  }
+
+  def strategy: CuckooStrategy[E] = state.strategy
 
   override def size(): Int = state.size()
 
@@ -22,12 +33,9 @@ final class GCuckooFilter[E] private(val state: CuckooFilter[E]) extends CvFilte
 
   override def tryAdd(elem: E): Try[GCuckooFilter[E]] = Try.apply(add(elem))
 
-  override def lteq(that: GCuckooFilter[E]): Boolean = ???
-
   override def merge(that: GCuckooFilter[E]): GCuckooFilter[E] = {
     val thisData = this.state.data.typed
-    val thatData = that.state.data.typed
-    val newData = thisData.zipFold(thatData)(thisData) { (newData, thisBucket, thatBucket, index) =>
+    val newState = this.state.zipFold[Nothing](that.state)(thisData) { (newData, thisBucket, thatBucket, index) =>
       thatBucket.foldLeft(newData) { (newData, entry) =>
         if (thisBucket.contains(entry)) {
           newData
@@ -40,10 +48,10 @@ final class GCuckooFilter[E] private(val state: CuckooFilter[E]) extends CvFilte
         }
       }
     }
-    copy(state.copy(newData))
+    copy(newState)
   }
 
-  def copy(state: CuckooFilter[E]): GCuckooFilter[E] = new GCuckooFilter[E](state)
+  private def copy(state: CuckooFilter[E]): GCuckooFilter[E] = new GCuckooFilter[E](state)
 
   override def toString: String = s"GCF($state)"
 }

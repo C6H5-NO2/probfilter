@@ -16,12 +16,11 @@ private[cuckoo] final class CuckooFilterOps[E]
 
   def contains(elem: E): Boolean = {
     val triple = strategy.hashAll(elem)
-    val entry = triple.fp
     strategy.storageType() match {
-      case EntryStorageType.SIMPLE_BYTE => contains[Byte](triple, entry.asInstanceOf[Byte])
-      case EntryStorageType.SIMPLE_SHORT => contains[Short](triple, entry)
-      case EntryStorageType.VERSIONED_INT => contains[Int](triple, entry)
-      case EntryStorageType.VERSIONED_LONG => contains[Long](triple, entry)
+      case EntryStorageType.SIMPLE_BYTE => contains[Byte](triple, triple.fp.asInstanceOf[Byte])
+      case EntryStorageType.SIMPLE_SHORT => contains[Short](triple, triple.fp)
+      case EntryStorageType.VERSIONED_INT => exists[Int](triple, extractor.extract(_) == triple.fp)
+      case EntryStorageType.VERSIONED_LONG => exists[Long](triple, extractor.extract(_) == triple.fp)
     }
   }
 
@@ -30,7 +29,7 @@ private[cuckoo] final class CuckooFilterOps[E]
     data.contains(triple.i, entry) || data.contains(triple.j, entry)
   }
 
-  def exists[T](triple: CuckooStrategy.Triple, p: T => Boolean): Boolean = {
+  private def exists[T](triple: CuckooStrategy.Triple, p: T => Boolean): Boolean = {
     val data = table.typed[T]
     data.exists(triple.i, p) || data.exists(triple.j, p)
   }

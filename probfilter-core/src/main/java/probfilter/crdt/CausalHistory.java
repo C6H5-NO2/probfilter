@@ -17,7 +17,7 @@ public interface CausalHistory extends Serializable {
     }
 
     /**
-     * @implNote The default implementation assumes consecutive timestamps. Override if necessary.
+     * @implNote The default implementation assumes consecutive timestamps; override if necessary.
      */
     default boolean observes(short replicaId, int timestamp) {
         return UnsignedNumber.compare(timestamp, get(replicaId)) <= 0;

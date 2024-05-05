@@ -33,8 +33,6 @@ final class CuckooFilter[E] private(private val ops: CuckooFilterOps[E]) extends
 
   override def contains(elem: E): Boolean = ops.contains(elem)
 
-  def exists[T](triple: CuckooStrategy.Triple, p: T => Boolean): Boolean = ops.exists(triple, p)
-
   override def add(elem: E): CuckooFilter[E] = copy(ops.add(elem))
 
   def add[T](triple: CuckooStrategy.Triple, entry: T, elem: Any): CuckooFilter[E] = copy(ops.add[T](triple, entry, elem))

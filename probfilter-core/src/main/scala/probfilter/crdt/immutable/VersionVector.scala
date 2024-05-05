@@ -20,8 +20,9 @@ final class VersionVector private(private val version: TreeMap[Short, Int]) exte
 
   override def merge(that: VersionVector): VersionVector = {
     val v2 = this.version.foldLeft(that.version) { (v2, tup) =>
-      val (id, ts) = tup
-      if (ts gtu v2.getOrElse(id, 0))
+      val id = tup._1
+      val ts = tup._2
+      if (UnsignedNumber.compare(ts, v2.getOrElse(id, 0)) > 0)
         v2.updated(id, ts)
       else
         v2

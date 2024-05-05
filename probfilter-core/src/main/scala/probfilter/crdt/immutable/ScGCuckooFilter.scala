@@ -42,7 +42,7 @@ final class ScGCuckooFilter[E] private
     if (state.series.isEmpty)
       new GCuckooFilter[E](strategy.tighten())
     else
-      new GCuckooFilter[E](state.series.last.state.strategy.tighten())
+      new GCuckooFilter[E](state.series.last.strategy.tighten())
   }
 
   override protected def copy(state: Series[GCuckooFilter[E]]): ScGCuckooFilter[E] = new ScGCuckooFilter[E](state, strategy)
