@@ -1,4 +1,4 @@
-package eval.util;
+package eval.int128;
 
 import java.io.*;
 import java.util.Arrays;
@@ -46,16 +46,16 @@ public final class Int128Array implements Serializable {
         this.array = array;
     }
 
-    public void writeFile(String pathname) throws IOException {
-        try (var fos = new FileOutputStream(pathname);
+    public void writeFile(File file) throws IOException {
+        try (var fos = new FileOutputStream(file);
              var bos = new BufferedOutputStream(fos);
              var dos = new DataOutputStream(bos)) {
             write(dos);
         }
     }
 
-    public void readFile(String pathname) throws IOException {
-        try (var fis = new FileInputStream(pathname);
+    public void readFile(File file) throws IOException {
+        try (var fis = new FileInputStream(file);
              var bis = new BufferedInputStream(fis);
              var dis = new DataInputStream(bis)) {
             read(dis);
