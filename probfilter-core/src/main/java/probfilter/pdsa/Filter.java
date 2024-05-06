@@ -10,7 +10,7 @@ import java.io.Serializable;
  */
 public interface Filter<E> extends Serializable {
     /**
-     * @return number of elements in this filter
+     * @return a <i>possibly estimated</i> number of elements in this filter
      */
     int size();
 
@@ -27,18 +27,22 @@ public interface Filter<E> extends Serializable {
     boolean contains(E elem);
 
     /**
-     * @return a new instance of {@code T} with {@code elem} added
+     * @return a filter with {@code elem} added
      * @throws java.lang.RuntimeException if failed due to the properties of the filter
      * @see probfilter.pdsa.Filter#tryAdd(E)
      */
     Filter<E> add(E elem);
 
+    /**
+     * @implNote Any unchecked exception should be wrapped in the return value.
+     * @see probfilter.pdsa.Filter#add(E)
+     */
     default Try<Filter<E>> tryAdd(E elem) {
         return Try.apply(() -> add(elem));
     }
 
     /**
-     * @return a new instance of {@code T} with {@code elem} removed
+     * @return a filter with {@code elem} removed
      * @throws java.lang.UnsupportedOperationException if not supported
      */
     default Filter<E> remove(E elem) {

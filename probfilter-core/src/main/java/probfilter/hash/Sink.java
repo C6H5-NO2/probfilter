@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 
 
 /**
- * A mutable collection that accumulates primitive values for hashing.
+ * A <i>mutable</i> collection that accumulates primitive values for hashing.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class Sink {
