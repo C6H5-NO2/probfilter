@@ -13,7 +13,7 @@
    rm -r "./$Z3_NAME/"
    rm "./$Z3_NAME.zip"
    ```
-3. Create a symbolic link thanks to the hard-coding of scan path in VeriFx.
+3. Create a symbolic link due to the hard-coding of scan path in VeriFx.
    ```sh
    # on linux
    mkdir -p "./src/main"

@@ -4,15 +4,19 @@ val akkaVersion = "2.9.0"
 val guavaVersion = "32.1.3-jre"
 val scalatestVersion = "3.2.17"
 
-
 lazy val commonSettings = Seq(
   version := "0.1.0-alpha",
+)
+
+lazy val commonAkkaSettings = Seq(
+  resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
 )
 
 lazy val root = Project("probfilter", file(".")).aggregate(
   core,
   verifx,
   akka,
+  eval,
   sample
 )
 
@@ -46,7 +50,7 @@ lazy val verifx = Project("probfilter-verifx", file("probfilter-verifx")).settin
 
 lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(
   commonSettings,
-  resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
+  commonAkkaSettings,
   libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion % Provided,
     "org.scalatest" %% "scalatest" % scalatestVersion % Test,
@@ -54,9 +58,18 @@ lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(co
   )
 )
 
+lazy val eval = Project("probfilter-eval", file("probfilter-eval")).dependsOn(akka).settings(
+  commonSettings,
+  commonAkkaSettings,
+  libraryDependencies ++= Seq(
+    "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+  )
+)
+
 lazy val sample = Project("probfilter-sample", file("probfilter-sample")).dependsOn(akka).settings(
   commonSettings,
-  resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
+  commonAkkaSettings,
   libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
     "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
