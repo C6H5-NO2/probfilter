@@ -60,7 +60,7 @@ object SimpleCuckooStrategy {
     require(capacity > 0, s"SimpleCuckooStrategy.create: capacity = $capacity not > 0")
     require(1 <= bucketSize && bucketSize <= 8, s"SimpleCuckooStrategy.create: bucketSize = $bucketSize !in [1, 8]")
     val numBuckets = Try.apply(IntMath.ceilingPowerOfTwo(capacity / bucketSize))
-    require(numBuckets.isSuccess, s"SimpleCuckooStrategy.create: numBuckets = ${capacity / bucketSize}")
+    require(numBuckets.isSuccess, s"SimpleCuckooStrategy.create: numBuckets cannot be calculated given capacity $capacity and bucketSize $bucketSize")
     require(maxIterations >= 0, s"SimpleCuckooStrategy.create: maxIterations = $maxIterations < 0")
     val storageTypeErrMsg = () => s"SimpleCuckooStrategy.create: storageType $storageType incompatible with fingerprint of $fingerprintBits bits"
     storageType match {
@@ -69,8 +69,9 @@ object SimpleCuckooStrategy {
       case EntryStorageType.VERSIONED_INT => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
       case EntryStorageType.VERSIONED_LONG => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
     }
-    val fpReqErrMsg = "SimpleCuckooStrategy.create: 4 ^ (bucketSize * fingerprintBits) < \\Omega(capacity)"
-    require(2 * bucketSize * fingerprintBits >= math.floor(math.log(capacity) / math.log(2)), fpReqErrMsg)
+    val fpReqLhs = 2 * bucketSize * fingerprintBits
+    val fpReqRhs = math.floor(math.log(capacity) / math.log(2))
+    require(fpReqLhs >= fpReqRhs, s"SimpleCuckooStrategy.create: expect 4 ^ (bucketSize * fingerprintBits) > \\Omega(capacity), but $fpReqLhs < $fpReqRhs")
     new SimpleCuckooStrategy[E](capacity, numBuckets.get, bucketSize, maxIterations, fingerprintBits, storageType)(funnel)
   }
 

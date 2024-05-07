@@ -3,6 +3,7 @@ package probfilter.crdt.immutable
 import probfilter.pdsa.cuckoo.immutable.CuckooFilter
 import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType}
 
+import scala.reflect.ClassTag
 import scala.util.Try
 
 
@@ -34,13 +35,21 @@ final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends
   override def tryAdd(elem: E): Try[GCuckooFilter[E]] = Try.apply(add(elem))
 
   override def merge(that: GCuckooFilter[E]): GCuckooFilter[E] = {
-    val thisData = this.state.data.typed
-    val newState = this.state.zipFold[Nothing](that.state)(thisData) { (newData, thisBucket, thatBucket, index) =>
+    val newState = this.strategy.storageType() match {
+      case EntryStorageType.SIMPLE_BYTE => mergeImpl[Byte](that)
+      case EntryStorageType.SIMPLE_SHORT => mergeImpl[Short](that)
+    }
+    copy(newState)
+  }
+
+  private def mergeImpl[T: ClassTag](that: GCuckooFilter[E]): CuckooFilter[E] = {
+    val thisData = this.state.data.typed[T]
+    this.state.zipFold(that.state)(thisData) { (newData, thisBucket, thatBucket, index) =>
       thatBucket.foldLeft(newData) { (newData, entry) =>
         if (thisBucket.contains(entry)) {
           newData
         } else {
-          val altIndex = this.state.strategy.altIndexOf(index, entry)
+          val altIndex = this.state.strategy.altIndexOf(index, entry.asInstanceOf[java.lang.Number].shortValue())
           if (thisData.contains(altIndex, entry))
             newData
           else
@@ -48,7 +57,6 @@ final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends
         }
       }
     }
-    copy(newState)
   }
 
   private def copy(state: CuckooFilter[E]): GCuckooFilter[E] = new GCuckooFilter[E](state)
