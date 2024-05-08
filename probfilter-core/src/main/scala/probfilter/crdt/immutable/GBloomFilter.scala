@@ -21,8 +21,6 @@ final class GBloomFilter[E] private(private val state: BloomFilter[E]) extends C
 
   override def add(elem: E): GBloomFilter[E] = copy(state.add(elem))
 
-  override def lteq(that: GBloomFilter[E]): Boolean = this.state.subsetOf(that.state)
-
   override def merge(that: GBloomFilter[E]): GBloomFilter[E] = copy(this.state.union(that.state))
 
   private def copy(state: BloomFilter[E]): GBloomFilter[E] = new GBloomFilter[E](state)

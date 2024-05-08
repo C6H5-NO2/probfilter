@@ -23,7 +23,5 @@ final class BloomFilter[E] private(private val data: BitSet, val strategy: Bloom
 
   def union(that: BloomFilter[E]): BloomFilter[E] = copy(this.data.union(that.data))
 
-  def subsetOf(that: BloomFilter[E]): Boolean = this.data.subsetOf(that.data)
-
   private def copy(data: BitSet): BloomFilter[E] = new BloomFilter[E](data, strategy)
 }

@@ -22,6 +22,4 @@ final class BloomFilter[E] private(private val data: mutable.BitSet, val strateg
   override def add(elem: E): BloomFilter[E] = {data.++=(strategy.hashIterator(elem)); this}
 
   def union(that: BloomFilter[E]): BloomFilter[E] = {this.data.|=(that.data); this}
-
-  def subsetOf(that: BloomFilter[E]): Boolean = this.data.subsetOf(that.data)
 }
