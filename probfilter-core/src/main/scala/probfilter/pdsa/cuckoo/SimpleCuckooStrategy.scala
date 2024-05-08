@@ -1,6 +1,7 @@
 package probfilter.pdsa.cuckoo
 
 import com.google.common.math.IntMath
+import probfilter.hash.FoldHash.{BytesHashCode, LongHashCode}
 import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 
 import scala.util.Try
@@ -28,10 +29,10 @@ final class SimpleCuckooStrategy[E] private
     SimpleCuckooStrategy.create(newCapacity, bucketSize, maxIterations, newFingerprintBits, newStorageType)
   }
 
-  override def indexHash(elem: E): Int = (MurMurHash3.hash(elem) & Int.MaxValue).toInt % numBuckets
+  override def indexHash(elem: E): Int = (MurMurHash3.hash(elem).xorFoldToInt & Int.MaxValue) % numBuckets
 
   override def fingerprintHash(elem: E): Short = {
-    val h = FarmHashFingerprint64.hash(elem) & Int.MaxValue
+    val h = FarmHashFingerprint64.hash(elem).xorFoldToInt & Int.MaxValue
     val m = (1 << fingerprintBits) - 1
     (h % m + 1).toShort
   }
@@ -40,7 +41,7 @@ final class SimpleCuckooStrategy[E] private
   override def altIndexOf(i: Int, fp: Short): Int = {
     import probfilter.hash.Funnels.IntFunnel
     import probfilter.util.UnsignedNumber
-    val h = (MurMurHash3.hash(UnsignedNumber.toUInt(fp))(IntFunnel) & Int.MaxValue).toInt
+    val h = MurMurHash3.hash(UnsignedNumber.toUInt(fp))(IntFunnel).xorFoldToInt & Int.MaxValue
     (i ^ h) % numBuckets
   }
 }

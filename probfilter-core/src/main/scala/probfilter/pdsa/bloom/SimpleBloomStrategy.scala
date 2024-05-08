@@ -1,5 +1,6 @@
 package probfilter.pdsa.bloom
 
+import probfilter.hash.FoldHash.{BytesHashCode, LongHashCode}
 import probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
 
 
@@ -10,9 +11,9 @@ final class SimpleBloomStrategy[E] private
   extends KMBloomStrategy[E] {
   override def tighten(): SimpleBloomStrategy[E] = SimpleBloomStrategy.create(capacity + (capacity >>> 1), desiredFpp / 2.0)
 
-  override def hash1(elem: E): Int = MurMurHash3.hash(elem).toInt
+  override def hash1(elem: E): Int = MurMurHash3.hash(elem).xorFoldToInt
 
-  override def hash2(elem: E): Int = FarmHashFingerprint64.hash(elem).toInt
+  override def hash2(elem: E): Int = FarmHashFingerprint64.hash(elem).xorFoldToInt
 }
 
 
