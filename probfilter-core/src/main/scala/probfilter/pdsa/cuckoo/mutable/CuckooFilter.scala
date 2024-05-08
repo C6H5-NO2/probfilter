@@ -51,7 +51,8 @@ final class CuckooFilter[E] private(private var ops: CuckooFilterOps[E]) extends
                 (op: (TypedCuckooTable[T], Array[T], Array[T], Int) => TypedCuckooTable[T]): CuckooFilter[E] = {
     val thisTable = this.ops.table.asInstanceOf[CuckooTable].typed[T]
     val thatTable = that.ops.table.asInstanceOf[CuckooTable].typed[T]
-    val newTable = thisTable.zipFold(thatTable)(z)(op)
+    val maxBuckets = math.max(thisTable.numBuckets, thatTable.numBuckets)
+    val newTable = thisTable.zipFold(thatTable)(z.reserve(maxBuckets))(op)
     ops = new CuckooFilterOps[E](newTable, ops.strategy, true)
     this
   }

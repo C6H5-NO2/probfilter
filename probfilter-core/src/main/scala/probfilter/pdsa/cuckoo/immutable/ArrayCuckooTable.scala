@@ -38,5 +38,6 @@ final class ArrayCuckooTable[T: ClassTag] private[immutable]
 
 
 object ArrayCuckooTable {
+  /** @return an array cuckoo table with 16 four-slot-buckets */
   def empty[T: ClassTag]: ArrayCuckooTable[T] = new ArrayCuckooTable[T](16, 4)
 }

@@ -8,6 +8,8 @@ import scala.reflect.ClassTag
 trait TypedCuckooTable[T] extends TypedCuckooTableOps[T] with CuckooTable {
   override def set(index: Int, value: Array[T]): TypedCuckooTable[T]
 
+  override def reserve(buckets: Int): TypedCuckooTable[T]
+
   override def add(index: Int, entry: T): TypedCuckooTable[T] =
     super.add(index, entry).asInstanceOf[TypedCuckooTable[T]]
 

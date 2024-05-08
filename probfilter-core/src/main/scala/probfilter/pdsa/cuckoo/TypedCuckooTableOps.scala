@@ -15,6 +15,9 @@ trait TypedCuckooTableOps[T] extends CuckooTableOps {
 
   def set(index: Int, value: Array[T]): TypedCuckooTableOps[T]
 
+  /** Optionally reserves the number of buckets to `buckets`. */
+  def reserve(buckets: Int): TypedCuckooTableOps[T]
+
   /** @return number of entries in the bucket at `index` */
   def size(index: Int): Int = get(index).length
 

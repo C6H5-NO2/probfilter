@@ -25,6 +25,8 @@ final class MapCuckooTable[T: ClassTag] private
     this
   }
 
+  override def reserve(buckets: Int): TypedCuckooTable[T] = this
+
   def toArrayCuckooTable(bucketSize: Int): ArrayCuckooTable[T] = {
     val tup = MapCuckooTableOps.toArrayCuckooTableData(data, bucketSize, MapCuckooTable.empty[T])
     new ArrayCuckooTable[T](tup._1, tup._2.asInstanceOf[TypedCuckooTable[T]], currSize, bucketSize)

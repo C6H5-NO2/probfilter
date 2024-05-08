@@ -28,6 +28,12 @@ final class ArrayCuckooTable[T: ClassTag] private[mutable]
     this
   }
 
+  override def reserve(buckets: Int): TypedCuckooTable[T] = {
+    data = if (buckets <= numBuckets) data else Array.copyOf(data, buckets * bucketSize)
+    overflowed.reserve(buckets)
+    this
+  }
+
   def toMapCuckooTable: MapCuckooTable[T] =
     ArrayCuckooTableOps.toMapCuckooTable(this, MapCuckooTable.empty[T]).asInstanceOf[MapCuckooTable[T]]
 
@@ -36,5 +42,6 @@ final class ArrayCuckooTable[T: ClassTag] private[mutable]
 
 
 object ArrayCuckooTable {
+  /** @return an array cuckoo table with 16 four-slot-buckets */
   def empty[T: ClassTag]: ArrayCuckooTable[T] = new ArrayCuckooTable[T](16, 4)
 }
