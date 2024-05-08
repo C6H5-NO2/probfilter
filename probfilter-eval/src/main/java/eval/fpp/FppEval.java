@@ -59,20 +59,21 @@ public abstract class FppEval {
     private String evalLocalStep(int load) {
         //noinspection UnnecessaryLocalVariable
         int capacity = load;
-        double empFpp = 0;
-        double loadFactor = 0;
-        double succIns = 0;
+        double theorFpp = 0;
+        double avgEmpFpp = 0;
+        double avgLoadFactor = 0;
+        double avgSuccIns = 0;
         for (int epoch = 0; epoch < repeat; ++epoch) {
             var filter = createEmptyFilter(capacity, (short) 1);
+            theorFpp = filter.fpp();
             var tuple = Filters.fill(filter, data, Slice.fromLength(load * epoch, load));
             filter = tuple._1;
-            succIns += (double) tuple._2 / load;
-            loadFactor += (double) filter.size() / capacity;
+            avgSuccIns += (double) tuple._2 / load;
+            avgLoadFactor += (double) filter.size() / capacity;
             var tests = Slice.fromLength(Dataset.START_OF_TESTS + Dataset.LENGTH_OF_BATCH * epoch, Dataset.LENGTH_OF_BATCH);
-            empFpp += Filters.measureFpp(filter, data, tests);
+            avgEmpFpp += Filters.measureFpp(filter, data, tests);
         }
-        double theorFpp = createEmptyFilter(capacity, (short) 1).fpp();
-        return String.format("%d,%f,%d,%f,%f,%f", capacity, theorFpp, load, empFpp / repeat, loadFactor / repeat, succIns / repeat);
+        return String.format("%d,%f,%d,%f,%f,%f", capacity, theorFpp, load, avgEmpFpp / repeat, avgLoadFactor / repeat, avgSuccIns / repeat);
     }
 
     protected final void evalSplit(String resultsPathname, double major) {
@@ -100,9 +101,10 @@ public abstract class FppEval {
     private String evalSplitStep(int load, double major) {
         //noinspection UnnecessaryLocalVariable
         int capacity = load;
-        double empFpp = 0;
-        double loadFactor = 0;
-        double succIns = 0;
+        double theorFpp = 0;
+        double avgEmpFpp = 0;
+        double avgLoadFactor = 0;
+        double avgSuccIns = 0;
         for (int epoch = 0; epoch < repeat; ++epoch) {
             var filter1 = createEmptyFilter(capacity, (short) 1);
             var src1 = Slice.fromLength(load * epoch, (int) (load * major));
@@ -112,14 +114,14 @@ public abstract class FppEval {
             var src2 = Slice.fromUntil(src1.until(), load * (epoch + 1));
             var tuple2 = Filters.fill(filter2, data, src2);
             filter2 = tuple2._1;
-            succIns += (double) (tuple1._2 + tuple2._2) / load;
+            avgSuccIns += (double) (tuple1._2 + tuple2._2) / load;
             //noinspection unchecked
             var filter = ((Convergent<Filter<Int128>>) filter1).merge(filter2);
-            loadFactor += (double) filter.size() / capacity;
+            theorFpp = filter.fpp();
+            avgLoadFactor += (double) filter.size() / capacity;
             var tests = Slice.fromLength(Dataset.START_OF_TESTS + Dataset.LENGTH_OF_BATCH * epoch, Dataset.LENGTH_OF_BATCH);
-            empFpp += Filters.measureFpp(filter, data, tests);
+            avgEmpFpp += Filters.measureFpp(filter, data, tests);
         }
-        double theorFpp = createEmptyFilter(capacity, (short) 1).fpp();
-        return String.format("%d,%f,%d,%f,%f,%f", capacity, theorFpp, load, empFpp / repeat, loadFactor / repeat, succIns / repeat);
+        return String.format("%d,%f,%d,%f,%f,%f", capacity, theorFpp, load, avgEmpFpp / repeat, avgLoadFactor / repeat, avgSuccIns / repeat);
     }
 }
