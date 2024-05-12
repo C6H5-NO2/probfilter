@@ -6,8 +6,14 @@ final class EvalRecord private(private val record: Map[String, Seq[Number]]) {
 
   def this(statistics: Array[String]) = this(statistics: _*)
 
-  def report(statistic: String, value: Number): EvalRecord =
+  def append(statistic: String, value: Number): EvalRecord =
     new EvalRecord(record.updated(statistic, record.apply(statistic).appended(value)))
+
+  def update(statistic: String, value: Number): EvalRecord = {
+    if (record.apply(statistic).length > 1)
+      throw new IllegalArgumentException()
+    new EvalRecord(record.updated(statistic, Seq.apply(value)))
+  }
 
   def average(): EvalRecord = {
     val length = record.valuesIterator.map(_.length).max

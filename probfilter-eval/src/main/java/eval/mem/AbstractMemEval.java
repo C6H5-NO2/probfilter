@@ -67,7 +67,7 @@ public abstract class AbstractMemEval extends EvalLoop {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return records.report("retained bpe", retainedBpe).report("serialized bpe", serializedBpe);
+        return records.append("retained bpe", retainedBpe).append("serialized bpe", serializedBpe);
     }
 
     @Override

@@ -15,7 +15,7 @@ final class FppEvalORCF extends FppEval {
     }
 
     @Override
-    protected Filter<Int128> createEmptyFilter(int capacity, short rid) {
+    Filter<Int128> supplyFilter(int capacity, short rid) {
         var strategy = SimpleCuckooStrategy.create(capacity, 4, 100, 8, EntryStorageType.VERSIONED_LONG, new Int128Funnel());
         return new ORCuckooFilter<>(strategy, rid);
     }

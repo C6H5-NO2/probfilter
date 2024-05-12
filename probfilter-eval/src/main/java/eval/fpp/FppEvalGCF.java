@@ -14,7 +14,7 @@ final class FppEvalGCF extends FppEval {
     }
 
     @Override
-    protected Filter<Int128> createEmptyFilter(int capacity, short rid) {
+    Filter<Int128> supplyFilter(int capacity, short rid) {
         var strategy = SimpleCuckooStrategy.create(capacity, 4, 100, 8, new Int128Funnel());
         return new GCuckooFilter<>(strategy);
     }

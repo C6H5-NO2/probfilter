@@ -14,7 +14,7 @@ final class FppEvalGBF extends FppEval {
     }
 
     @Override
-    protected Filter<Int128> createEmptyFilter(int capacity, short rid) {
+    Filter<Int128> supplyFilter(int capacity, short rid) {
         var strategy = SimpleBloomStrategy.create(capacity, 3e-2, new Int128Funnel());
         return new GBloomFilter<>(strategy);
     }
