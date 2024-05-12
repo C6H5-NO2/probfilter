@@ -1,4 +1,4 @@
-package eval.mem;
+package eval.akka;
 
 import akka.cluster.ddata.GSet;
 import probfilter.crdt.immutable.CvFilter;

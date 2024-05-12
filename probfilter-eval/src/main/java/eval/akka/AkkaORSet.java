@@ -1,4 +1,4 @@
-package eval.mem;
+package eval.akka;
 
 import akka.actor.Address;
 import akka.cluster.UniqueAddress;
@@ -12,7 +12,7 @@ public final class AkkaORSet<E> implements CvFilter<E, AkkaORSet<E>> {
     private final ORSet<E> set;
 
     public AkkaORSet(short rid) {
-        this.address = new SelfUniqueAddress(new UniqueAddress(new Address("protocol", "system", "host", 0), (long) rid));
+        this.address = new SelfUniqueAddress(new UniqueAddress(new Address("", "", "", 0), (long) rid));
         this.set = ORSet.<E>create();
     }
 

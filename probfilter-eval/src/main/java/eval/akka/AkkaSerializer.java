@@ -1,4 +1,4 @@
-package eval.mem;
+package eval.akka;
 
 import akka.cluster.ddata.protobuf.ReplicatedDataSerializer;
 import akka.cluster.ddata.protobuf.msg.ReplicatorMessages;
@@ -7,6 +7,10 @@ import akka.util.Unsafe;
 import eval.int128.Int128;
 
 
+/**
+ * @implNote {@link akka.cluster.ddata.protobuf.ReplicatedDataSerializer#system()} is set to {@code null}.
+ * Call only those methods that do not depend on it.
+ */
 public final class AkkaSerializer extends ReplicatedDataSerializer {
     /**
      * DO NOT CALL THIS CONSTRUCTOR
