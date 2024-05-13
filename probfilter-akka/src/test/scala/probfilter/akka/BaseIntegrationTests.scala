@@ -6,7 +6,7 @@ import akka.cluster.MemberStatus
 import akka.cluster.typed.{Cluster, Join}
 import akka.testkit.SocketUtil
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import probfilter.crdt.BaseFilter
+import probfilter.crdt.immutable.CvFilter
 
 
 object BaseIntegrationTests {
@@ -23,19 +23,17 @@ object BaseIntegrationTests {
       """.stripMargin
     )
 
-    def fill(n: Int)(systemname: String): Vector[Config] = {
+    def fill(n: Int)(systemname: String): Seq[Config] = {
       val ports = SocketUtil.temporaryServerAddresses(n).map(_.getPort)
       from(ports)(systemname)
     }
 
-    def from(ports: Iterable[Int])(systemname: String): Vector[Config] = {
+    def from(ports: Iterable[Int])(systemname: String): Seq[Config] = {
       import scala.jdk.CollectionConverters.IterableHasAsJava
       val hostname = basic.getString("akka.remote.artery.canonical.hostname")
-      val seeds = ports.view.map(port => s"akka://$systemname@$hostname:$port").toVector
+      val seeds = ports.map(port => s"akka://$systemname@$hostname:$port")
       val config = basic.withValue("akka.cluster.seed-nodes", ConfigValueFactory.fromIterable(seeds.asJava))
-      ports.view.map(
-        port => config.withValue("akka.remote.artery.canonical.port", ConfigValueFactory.fromAnyRef(port))
-      ).toVector
+      ports.map(port => config.withValue("akka.remote.artery.canonical.port", ConfigValueFactory.fromAnyRef(port))).toSeq
     }
   }
 
@@ -53,11 +51,11 @@ object BaseIntegrationTests {
     }
   }
 
-  def withClusterFrom(filters: Iterable[BaseFilter[_, _]])
-                     (fn: Vector[ActorSystem[Messages.Message]] => Unit)
-                     (kit: ScalaTestWithActorTestKit): Unit = {
+  def withClusterFrom(filters: Iterable[CvFilter[_, _]])
+                     (kit: ScalaTestWithActorTestKit)
+                     (fn: Seq[ActorSystem[Messages.Message]] => Unit): Unit = {
     val name = "ClusterSystem"
-    val key = new ReplicatedFilterKey("2024")
+    val key = new ReplicatedFilterKey("42")
     val systems = (Configs.fill(filters.size)(name) lazyZip filters).map { (config, filter) =>
       val replicator = new FilterReplicator(key, filter)
       ActorSystem.apply(replicator.create(), name, config)
