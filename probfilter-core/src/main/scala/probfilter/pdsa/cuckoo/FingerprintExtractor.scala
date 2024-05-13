@@ -1,7 +1,7 @@
 package probfilter.pdsa.cuckoo
 
 
-private[cuckoo] sealed trait FingerprintExtractor extends Serializable {
+sealed trait FingerprintExtractor extends Serializable {
   def extract(data: Any): Short
 
   def extract(data: Any, bits: Int): Short = (extract(data) & ((1 << bits) - 1)).asInstanceOf[Short]

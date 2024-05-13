@@ -3,7 +3,7 @@ package probfilter.crdt.mutable
 import probfilter.crdt.Convergent
 import probfilter.pdsa.Filter
 import probfilter.pdsa.cuckoo.mutable.CuckooFilter
-import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType}
+import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType, FingerprintExtractor}
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -38,20 +38,20 @@ final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends
 
   override def merge(that: GCuckooFilter[E]): GCuckooFilter[E] = {
     this.strategy.storageType() match {
-      case EntryStorageType.SIMPLE_BYTE => mergeImpl[Byte](that)
-      case EntryStorageType.SIMPLE_SHORT => mergeImpl[Short](that)
+      case EntryStorageType.SIMPLE_BYTE => mergeImpl[Byte](that, FingerprintExtractor.create(state.strategy))
+      case EntryStorageType.SIMPLE_SHORT => mergeImpl[Short](that, FingerprintExtractor.create(state.strategy))
     }
     this
   }
 
-  private def mergeImpl[T: ClassTag](that: GCuckooFilter[E]): Unit = {
+  private def mergeImpl[T: ClassTag](that: GCuckooFilter[E], extractor: FingerprintExtractor): Unit = {
     val thisData = this.state.data.typed[T]
     this.state.zipFold(that.state)(thisData) { (newData, thisBucket, thatBucket, index) =>
       thatBucket.foldLeft(newData) { (newData, entry) =>
         if (thisBucket.contains(entry)) {
           newData
         } else {
-          val altIndex = this.state.strategy.altIndexOf(index, entry.asInstanceOf[java.lang.Number].shortValue())
+          val altIndex = this.state.strategy.altIndexOf(index, extractor.extract(entry))
           if (thisData.contains(altIndex, entry))
             newData
           else
