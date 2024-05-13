@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 
 /**
- * A type-erased adapter for {@link ImmCvFilter CvFilter}.
+ * A type-erased adapter for {@link probfilter.crdt.immutable.ImmCvFilter ImmCvFilter}.
  *
  * @see probfilter.akka.ReplicatedFilterKey
  */
