@@ -1,10 +1,10 @@
 package eval.akka;
 
 import akka.cluster.ddata.GSet;
-import probfilter.crdt.immutable.CvFilter;
+import probfilter.crdt.immutable.ImmCvFilter;
 
 
-public final class AkkaGSet<E> implements CvFilter<E, AkkaGSet<E>> {
+public final class AkkaGSet<E> implements ImmCvFilter<E, AkkaGSet<E>> {
     private final GSet<E> set;
 
     public AkkaGSet() {

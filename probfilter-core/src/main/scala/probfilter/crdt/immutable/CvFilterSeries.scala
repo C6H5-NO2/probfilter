@@ -7,8 +7,8 @@ import scala.annotation.tailrec
  * @tparam E type of elements
  * @tparam F type of sub-filters
  */
-abstract class CvFilterSeries[E, F <: CvFilter[E, F]] protected
-(protected val state: Series[F]) extends CvFilter[E, CvFilterSeries[E, F]] {
+abstract class CvFilterSeries[E, F <: ImmCvFilter[E, F]] protected
+(protected val state: Series[F]) extends ImmCvFilter[E, CvFilterSeries[E, F]] {
   override def size(): Int = state.series.foldLeft(0) { (sum, f) => sum + f.size() }
 
   override def capacity(): Int = Int.MaxValue

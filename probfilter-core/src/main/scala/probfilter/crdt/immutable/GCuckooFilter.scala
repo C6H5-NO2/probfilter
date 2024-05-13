@@ -9,7 +9,7 @@ import scala.util.Try
 
 /** An immutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends CvFilter[E, GCuckooFilter[E]] {
+final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends ImmCvFilter[E, GCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E]) = this(new CuckooFilter[E](strategy))
 
   {

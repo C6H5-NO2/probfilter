@@ -6,7 +6,7 @@ import probfilter.pdsa.bloom.immutable.BloomFilter
 
 /** An immutable grow-only replicated bloom filter. */
 @SerialVersionUID(1L)
-final class GBloomFilter[E] private(private val state: BloomFilter[E]) extends CvFilter[E, GBloomFilter[E]] {
+final class GBloomFilter[E] private(private val state: BloomFilter[E]) extends ImmCvFilter[E, GBloomFilter[E]] {
   def this(strategy: BloomStrategy[E]) = this(new BloomFilter[E](strategy))
 
   def strategy: BloomStrategy[E] = state.strategy

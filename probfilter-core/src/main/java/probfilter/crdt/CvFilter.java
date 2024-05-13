@@ -1,6 +1,5 @@
-package probfilter.crdt.immutable;
+package probfilter.crdt;
 
-import probfilter.crdt.Convergent;
 import probfilter.pdsa.Filter;
 
 

@@ -4,10 +4,10 @@ import akka.actor.Address;
 import akka.cluster.UniqueAddress;
 import akka.cluster.ddata.ORSet;
 import akka.cluster.ddata.SelfUniqueAddress;
-import probfilter.crdt.immutable.CvFilter;
+import probfilter.crdt.immutable.ImmCvFilter;
 
 
-public final class AkkaORSet<E> implements CvFilter<E, AkkaORSet<E>> {
+public final class AkkaORSet<E> implements ImmCvFilter<E, AkkaORSet<E>> {
     private final SelfUniqueAddress address;
     private final ORSet<E> set;
 

@@ -1,7 +1,5 @@
 package probfilter.crdt.mutable
 
-import probfilter.crdt.Convergent
-import probfilter.pdsa.Filter
 import probfilter.pdsa.cuckoo.mutable.CuckooFilter
 import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType, FingerprintExtractor}
 
@@ -11,7 +9,7 @@ import scala.util.Try
 
 /** A mutable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
-final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends Filter[E] with Convergent[GCuckooFilter[E]] {
+final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends MutCvFilter[E, GCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E]) = this(new CuckooFilter[E](strategy))
 
   {

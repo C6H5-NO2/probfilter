@@ -6,7 +6,7 @@ import akka.cluster.MemberStatus
 import akka.cluster.typed.{Cluster, Join}
 import akka.testkit.SocketUtil
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import probfilter.crdt.immutable.CvFilter
+import probfilter.crdt.immutable.ImmCvFilter
 
 
 object BaseIntegrationTests {
@@ -51,7 +51,7 @@ object BaseIntegrationTests {
     }
   }
 
-  def withClusterFrom(filters: Iterable[CvFilter[_, _]])
+  def withClusterFrom(filters: Iterable[ImmCvFilter[_, _]])
                      (kit: ScalaTestWithActorTestKit)
                      (fn: Seq[ActorSystem[Messages.Message]] => Unit): Unit = {
     val name = "ClusterSystem"

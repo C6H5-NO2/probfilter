@@ -1,8 +1,6 @@
 package probfilter.crdt.mutable
 
-import probfilter.crdt.Convergent
 import probfilter.crdt.immutable.VersionVector
-import probfilter.pdsa.Filter
 import probfilter.pdsa.cuckoo.mutable.{CuckooFilter, TypedCuckooTable}
 import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType, LongVersionedEntry}
 import probfilter.util.ArrayOpsEx
@@ -14,7 +12,7 @@ import scala.util.Try
 @SerialVersionUID(1L)
 final class ORCuckooFilter[E] private
 (private var state: CuckooFilter[E], private var hist: VersionVector, private val rid: Short)
-  extends Filter[E] with Convergent[ORCuckooFilter[E]] {
+  extends MutCvFilter[E, ORCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
 
   {

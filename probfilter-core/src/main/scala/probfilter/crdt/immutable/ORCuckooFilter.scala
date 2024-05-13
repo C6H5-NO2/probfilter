@@ -10,7 +10,7 @@ import scala.util.Try
 /** An immutable observed-remove replicated cuckoo filter. */
 @SerialVersionUID(1L)
 final class ORCuckooFilter[E] private
-(private val state: CuckooFilter[E], val hist: VersionVector, private val rid: Short) extends CvFilter[E, ORCuckooFilter[E]] {
+(private val state: CuckooFilter[E], val hist: VersionVector, private val rid: Short) extends ImmCvFilter[E, ORCuckooFilter[E]] {
   def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
 
   {

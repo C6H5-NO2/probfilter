@@ -2,7 +2,7 @@ package probfilter.akka
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.funsuite.AnyFunSuiteLike
-import probfilter.crdt.immutable.{CvFilter, GBloomFilter, GCuckooFilter, ORCuckooFilter}
+import probfilter.crdt.immutable.{ImmCvFilter, GBloomFilter, GCuckooFilter, ORCuckooFilter}
 import probfilter.hash.Funnels.IntFunnel
 import probfilter.pdsa.bloom.SimpleBloomStrategy
 import probfilter.pdsa.cuckoo.{EntryStorageType, SimpleCuckooStrategy}
@@ -29,7 +29,7 @@ final class FilterIntegrationTest extends ScalaTestWithActorTestKit(BaseIntegrat
     testReplication(filters)
   }
 
-  private def testReplication(filters: Iterable[CvFilter[_, _]]): Unit = {
+  private def testReplication(filters: Iterable[ImmCvFilter[_, _]]): Unit = {
     assume(filters.size == 3)
     BaseIntegrationTests.withClusterFrom(filters)(this) { actors =>
       val Seq(actor1, actor2, actor3) = actors
