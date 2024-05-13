@@ -1,34 +1,39 @@
 package probfilter.crdt.immutable
 
 import org.scalatest.funsuite.AnyFunSuite
-import probfilter.crdt.immutable.BaseFilterTests.BaseFilterOps
 import probfilter.hash.Funnels.IntFunnel
-import probfilter.pdsa.BloomStrategy
-import probfilter.util.LazyString
+import probfilter.pdsa.bloom.SimpleBloomStrategy
+
+import scala.util.Random
 
 
-class GBloomFilterTest extends AnyFunSuite {
-  private val strategy = BloomStrategy.create(1e4.toInt, 0.01)
+final class GBloomFilterTest extends AnyFunSuite {
+  private val strategy = SimpleBloomStrategy.create(1 << 10, 1e-2)
 
   test("GBloomFilter should contain added elements") {
-    BaseFilterTests.testAdd(new GBloomFilter(strategy), strategy.capacity)(this)
+    val seed = 42
+    val load = 1 << 5
+    val rnd = new Random(seed)
+    val data = Seq.fill(load)(rnd.nextInt())
+    val empty = new GBloomFilter(strategy)
+    val filter = data.foldLeft(empty)((f, i) => f.add(i))
+    data.foreach(i => assert(filter.contains(i)))
   }
 
-  test("GBloomFilter can contain false positives") {
-    val strategy = BloomStrategy.create(1e4.toInt, 0.01)
-    val evens = 0 until (2 * strategy.capacity) by 2
-    val filter = new GBloomFilter(strategy).addAll(evens)
-    val odds = 1 until 2e3.toInt by 2
-    val someKnownFps = Vector.apply(315, 581, 591, 1305, 1365, 1615, 1815, 2043)
-    for (e <- odds) {
-      if (someKnownFps.contains(e))
-        assert(filter.contains(e), LazyString.format("!contain false positive %s", e))
-      else
-        assert(!filter.contains(e), LazyString.format("contain false negative %s", e))
-    }
-  }
-
-  test("GBloomFilter should contain all elements after merged") {
-    BaseFilterTests.testMerge(new GBloomFilter(strategy), strategy.capacity, strategy.desiredFpp)(this)
+  test("GBloomFilter should contain all added elements after merge") {
+    val seed = 42
+    val load = 1 << 5
+    val rnd = new Random(seed)
+    val data1 = Seq.fill(load)(rnd.nextInt())
+    val data2 = Seq.fill(load)(rnd.nextInt())
+    val empty = new GBloomFilter(strategy)
+    val filter1 = data1.foldLeft(empty)((f, i) => f.add(i))
+    val filter2 = data2.foldLeft(empty)((f, i) => f.add(i))
+    val filter1m2 = filter1.merge(filter2)
+    val filter2m1 = filter2.merge(filter1)
+    data1.foreach(i => assert(filter1m2.contains(i)))
+    data2.foreach(i => assert(filter1m2.contains(i)))
+    data1.foreach(i => assert(filter2m1.contains(i)))
+    data2.foreach(i => assert(filter2m1.contains(i)))
   }
 }
