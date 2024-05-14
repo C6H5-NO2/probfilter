@@ -21,7 +21,7 @@ final class MapCuckooTable[T: ClassTag] private
 
   override def set(index: Int, value: Array[T]): TypedCuckooTable[T] = {
     currSize = currSize - size(index) + value.length
-    if (value.isEmpty) data.subtractOne(index) else data.addOne((index, value))
+    if (value.isEmpty) data.subtractOne(index) else data.addOne((index, value.clone()))
     this
   }
 

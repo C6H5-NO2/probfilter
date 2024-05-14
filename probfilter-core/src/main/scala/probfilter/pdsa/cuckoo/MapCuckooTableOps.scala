@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 private[cuckoo] object MapCuckooTableOps {
   def numBuckets(data: SortedMap[Int, _]): Int = if (data.isEmpty) 0 else data.lastKey + 1
 
-  def get[T: ClassTag](data: SortedMap[Int, Array[T]], index: Int): Array[T] = data.getOrElse(index, Array.empty[T])
+  def get[T: ClassTag](data: SortedMap[Int, Array[T]], index: Int): Array[T] = data.get(index).fold(Array.empty[T])(_.clone())
 
   def toArrayCuckooTableData[T: ClassTag](data: SortedMap[Int, Array[T]], bucketSize: Int,
                                           emptyTable: TypedCuckooTableOps[T]): (Array[T], TypedCuckooTableOps[T]) = {

@@ -19,7 +19,7 @@ final class MapCuckooTable[T: ClassTag] private
 
   override def set(index: Int, value: Array[T]): TypedCuckooTable[T] = {
     val newSize = size - size(index) + value.length
-    val newData = if (value.isEmpty) data.removed(index) else data.updated(index, value)
+    val newData = if (value.isEmpty) data.removed(index) else data.updated(index, value.clone())
     new MapCuckooTable[T](newData, newSize)
   }
 
