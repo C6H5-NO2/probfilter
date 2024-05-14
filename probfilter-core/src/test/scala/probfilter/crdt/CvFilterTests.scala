@@ -20,6 +20,7 @@ trait CvFilterTests {
     val rnd = new Random(seed)
     val data = Seq.fill(load)(rnd.nextInt())
     val empty = supplyFilter(capacity, 1)
+    data.foreach(i => assert(!empty.contains(i)))
     val filter = incl(empty)(data)
     data.foreach(i => assert(filter.contains(i)))
   }

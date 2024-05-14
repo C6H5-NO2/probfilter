@@ -9,7 +9,7 @@ import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType, SimpleCuckooStr
 
 final class ImmScORCuckooFilterTest extends AnyFunSuite with CvFilterTests {
   override def supplyFilter(capacity: Int, rid: Short)(implicit funnel: Funnel[Int]): CvFilter[Int, _] = {
-    val strategy = SimpleCuckooStrategy.create(capacity >> 2, 2, 20, EntryStorageType.VERSIONED_LONG)
+    val strategy = SimpleCuckooStrategy.create(capacity >> 2, 2, 20, 7, EntryStorageType.VERSIONED_LONG)
     new ScORCuckooFilter(strategy, rid)
   }
 
