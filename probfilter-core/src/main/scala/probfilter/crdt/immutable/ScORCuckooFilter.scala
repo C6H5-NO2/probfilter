@@ -1,7 +1,7 @@
 package probfilter.crdt.immutable
 
 import probfilter.pdsa.cuckoo.CuckooStrategy
-import probfilter.util.FalseRandom
+import probfilter.util.SimpleLCG
 
 import scala.annotation.tailrec
 
@@ -9,14 +9,14 @@ import scala.annotation.tailrec
 /** An immutable scalable observed-remove replicated cuckoo filter. */
 @SerialVersionUID(1L)
 final class ScORCuckooFilter[E] private
-(state: Series[ORCuckooFilter[E]], val rid: Short, val strategy: CuckooStrategy[E])
+(state: Series[ORCuckooFilter[E]], val rid: Short, val strategy: CuckooStrategy[E], private val rnd: SimpleLCG)
   extends CvFilterSeries[E, ORCuckooFilter[E]](state) {
   /**
    * @param strategy a strategy whose fpp is the expected compounded value
    * @note The first sub-filter is created with `strategy.tighten()`. Note the initial `capacity` and `fingerprintBits`.
    */
   def this(strategy: CuckooStrategy[E], rid: Short) =
-    this(Series.create(new ORCuckooFilter[E](strategy.tighten(), rid)), rid, strategy)
+    this(Series.create(new ORCuckooFilter[E](strategy.tighten(), rid)), rid, strategy, new SimpleLCG(rid))
 
   override def fpp(): Double = strategy.fpp()
 
@@ -47,7 +47,7 @@ final class ScORCuckooFilter[E] private
     if (indexes.isEmpty) {
       this
     } else {
-      val i = indexes.apply(FalseRandom.next(indexes.length))
+      val i = indexes.apply(rnd.next(indexes.length))
       val updated = state.map(i)(f => f.remove(elem))
       copy(updated).shrink().asInstanceOf[ScORCuckooFilter[E]]
     }
@@ -61,6 +61,6 @@ final class ScORCuckooFilter[E] private
   }
 
   override protected def copy(state: Series[ORCuckooFilter[E]]): ScORCuckooFilter[E] = {
-    new ScORCuckooFilter[E](state, rid, strategy)
+    new ScORCuckooFilter[E](state, rid, strategy, rnd)
   }
 }

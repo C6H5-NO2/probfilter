@@ -13,7 +13,7 @@ import scala.util.Try
 final class ORCuckooFilter[E] private
 (private var state: CuckooFilter[E], private var hist: VersionVector, private val rid: Short)
   extends MutCvFilter[E, ORCuckooFilter[E]] {
-  def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
+  def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy, rid), new VersionVector(), rid)
 
   {
     val storageType = state.strategy.storageType()

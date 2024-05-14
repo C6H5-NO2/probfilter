@@ -1,6 +1,6 @@
 package probfilter.pdsa.cuckoo
 
-import probfilter.util.FalseRandom
+import probfilter.util.SimpleLCG
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
@@ -11,10 +11,13 @@ import scala.reflect.ClassTag
  * @see [[probfilter.pdsa.cuckoo.immutable.CuckooFilter]] or [[probfilter.pdsa.cuckoo.mutable.CuckooFilter]]
  */
 @SerialVersionUID(1L)
-private[cuckoo] final class CuckooFilterOps[E] private
-(val table: CuckooTableOps, val strategy: CuckooStrategy[E], val mutable: Boolean, val extractor: FingerprintExtractor)
-  extends Serializable {
-  def this(empty: ClassTag[_] => CuckooTableOps, strategy: CuckooStrategy[E], mutable: Boolean) = this(
+private[cuckoo] final class CuckooFilterOps[E] private(
+  private val mutable: Boolean, val table: CuckooTableOps,
+  val strategy: CuckooStrategy[E], private val extractor: FingerprintExtractor,
+  private val rnd: SimpleLCG
+) extends Serializable {
+  def this(mutable: Boolean, empty: ClassTag[_] => CuckooTableOps, strategy: CuckooStrategy[E], seed: Int) = this(
+    mutable,
     strategy.storageType() match {
       case EntryStorageType.SIMPLE_BYTE => empty(ClassTag.Byte)
       case EntryStorageType.SIMPLE_SHORT => empty(ClassTag.Short)
@@ -22,8 +25,8 @@ private[cuckoo] final class CuckooFilterOps[E] private
       case EntryStorageType.VERSIONED_LONG => empty(ClassTag.Long)
     },
     strategy,
-    mutable,
-    FingerprintExtractor.create(strategy)
+    FingerprintExtractor.create(strategy),
+    new SimpleLCG(seed)
   )
 
   def contains(elem: E): Boolean = {
@@ -93,7 +96,7 @@ private[cuckoo] final class CuckooFilterOps[E] private
     } else if (s1 < c) {
       data.add(i1, entry)
     } else {
-      val victimIndex = FalseRandom.next(s1)
+      val victimIndex = rnd.next(s1)
       val tup = data.replace(i1, entry, victimIndex)
       val displacedEntry = tup._1
       val newData = tup._2
@@ -136,7 +139,7 @@ private[cuckoo] final class CuckooFilterOps[E] private
     val len = a1.length + a2.length
     if (len == 0)
       return data
-    val rand = FalseRandom.next(len)
+    val rand = rnd.next(len)
     if (rand < a1.length) {
       val entry = a1.apply(rand)
       data.remove(triple.i, entry)
@@ -177,5 +180,5 @@ private[cuckoo] final class CuckooFilterOps[E] private
     }
   }
 
-  def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](table, strategy, mutable, extractor)
+  def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](mutable, table, strategy, extractor, rnd)
 }

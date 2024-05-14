@@ -9,7 +9,9 @@ import scala.util.Try
 /** A mutable cuckoo filter. */
 @SerialVersionUID(1L)
 final class CuckooFilter[E] private(private var ops: CuckooFilterOps[E]) extends Filter[E] {
-  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilterOps[E](t => CuckooTable.empty(t), strategy, true))
+  def this(strategy: CuckooStrategy[E], seed: Int) = this(new CuckooFilterOps[E](true, t => CuckooTable.empty(t), strategy, seed))
+
+  def this(strategy: CuckooStrategy[E]) = this(strategy, 0)
 
   // todo: make private
   def data: CuckooTable = ops.table.asInstanceOf[CuckooTable]

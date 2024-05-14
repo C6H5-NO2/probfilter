@@ -11,7 +11,7 @@ import scala.util.Try
 @SerialVersionUID(1L)
 final class ORCuckooFilter[E] private
 (private val state: CuckooFilter[E], val hist: VersionVector, private val rid: Short) extends ImmCvFilter[E, ORCuckooFilter[E]] {
-  def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy), new VersionVector(), rid)
+  def this(strategy: CuckooStrategy[E], rid: Short) = this(new CuckooFilter[E](strategy, rid), new VersionVector(), rid)
 
   {
     val storageType = state.strategy.storageType()
