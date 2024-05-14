@@ -75,7 +75,7 @@ final class ORCuckooFilter[E] private
       newData.set(index, s)
     }
     val newHist = this.hist.merge(that.hist)
-    this.state = newState
+    this.state = newState.rebalance()
     this.hist = newHist
     this
   }

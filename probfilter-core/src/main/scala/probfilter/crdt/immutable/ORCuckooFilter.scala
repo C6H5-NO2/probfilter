@@ -73,7 +73,7 @@ final class ORCuckooFilter[E] private
       newData.set(index, s)
     }
     val newHist = this.hist.merge(that.hist)
-    copy(newState, newHist)
+    copy(newState.rebalance(), newHist)
   }
 
   def copy(hist: VersionVector): ORCuckooFilter[E] = new ORCuckooFilter[E](state, hist, rid)

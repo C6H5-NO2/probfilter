@@ -3,6 +3,7 @@ package probfilter.pdsa.cuckoo
 import probfilter.util.FalseRandom
 
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 
 
 /**
@@ -10,9 +11,20 @@ import scala.annotation.tailrec
  * @see [[probfilter.pdsa.cuckoo.immutable.CuckooFilter]] or [[probfilter.pdsa.cuckoo.mutable.CuckooFilter]]
  */
 @SerialVersionUID(1L)
-private[cuckoo] final class CuckooFilterOps[E]
-(val table: CuckooTableOps, val strategy: CuckooStrategy[E], val mutable: Boolean) extends Serializable {
-  private val extractor: FingerprintExtractor = FingerprintExtractor.create(strategy)
+private[cuckoo] final class CuckooFilterOps[E] private
+(val table: CuckooTableOps, val strategy: CuckooStrategy[E], val mutable: Boolean, val extractor: FingerprintExtractor)
+  extends Serializable {
+  def this(empty: ClassTag[_] => CuckooTableOps, strategy: CuckooStrategy[E], mutable: Boolean) = this(
+    strategy.storageType() match {
+      case EntryStorageType.SIMPLE_BYTE => empty(ClassTag.Byte)
+      case EntryStorageType.SIMPLE_SHORT => empty(ClassTag.Short)
+      case EntryStorageType.VERSIONED_INT => empty(ClassTag.Int)
+      case EntryStorageType.VERSIONED_LONG => empty(ClassTag.Long)
+    },
+    strategy,
+    mutable,
+    FingerprintExtractor.create(strategy)
+  )
 
   def contains(elem: E): Boolean = {
     val triple = strategy.hashAll(elem)
@@ -133,4 +145,37 @@ private[cuckoo] final class CuckooFilterOps[E]
       data.remove(triple.j, entry)
     }
   }
+
+  def rebalance(): CuckooTableOps = {
+    strategy.storageType() match {
+      case EntryStorageType.SIMPLE_BYTE => rebalanceImpl[Byte]()
+      case EntryStorageType.SIMPLE_SHORT => rebalanceImpl[Short]()
+      case EntryStorageType.VERSIONED_INT => rebalanceImpl[Int]()
+      case EntryStorageType.VERSIONED_LONG => rebalanceImpl[Long]()
+    }
+  }
+
+  private def rebalanceImpl[T](): TypedCuckooTableOps[T] = {
+    val data = table.typed[T]
+    Range.apply(0, strategy.numBuckets()).foldLeft(data) { (data, index) =>
+      if (data.size(index) <= strategy.bucketSize()) {
+        data
+      } else {
+        data.get(index).foldLeft(data) { (data, entry) =>
+          if (data.size(index) <= strategy.bucketSize()) {
+            data
+          } else {
+            val altIndex = strategy.altIndexOf(index, extractor.extract(entry))
+            if (altIndex == index || data.size(altIndex) >= strategy.bucketSize()) {
+              data
+            } else {
+              data.remove(index, entry).add(altIndex, entry)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](table, strategy, mutable, extractor)
 }

@@ -39,6 +39,7 @@ final class GCuckooFilter[E] private(private val state: CuckooFilter[E]) extends
       case EntryStorageType.SIMPLE_BYTE => mergeImpl[Byte](that, FingerprintExtractor.create(state.strategy))
       case EntryStorageType.SIMPLE_SHORT => mergeImpl[Short](that, FingerprintExtractor.create(state.strategy))
     }
+    this.state.rebalance()
     this
   }
 

@@ -1,7 +1,7 @@
 package probfilter.pdsa.cuckoo.mutable
 
 import probfilter.pdsa.Filter
-import probfilter.pdsa.cuckoo.{CuckooFilterOps, CuckooStrategy, EntryStorageType}
+import probfilter.pdsa.cuckoo.{CuckooFilterOps, CuckooStrategy}
 
 import scala.util.Try
 
@@ -9,16 +9,7 @@ import scala.util.Try
 /** A mutable cuckoo filter. */
 @SerialVersionUID(1L)
 final class CuckooFilter[E] private(private var ops: CuckooFilterOps[E]) extends Filter[E] {
-  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilterOps[E](
-    strategy.storageType() match {
-      case EntryStorageType.SIMPLE_BYTE => CuckooTable.empty[Byte]
-      case EntryStorageType.SIMPLE_SHORT => CuckooTable.empty[Short]
-      case EntryStorageType.VERSIONED_INT => CuckooTable.empty[Int]
-      case EntryStorageType.VERSIONED_LONG => CuckooTable.empty[Long]
-    },
-    strategy,
-    true
-  ))
+  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilterOps[E](t => CuckooTable.empty(t), strategy, true))
 
   // todo: make private
   def data: CuckooTable = ops.table.asInstanceOf[CuckooTable]
@@ -53,7 +44,12 @@ final class CuckooFilter[E] private(private var ops: CuckooFilterOps[E]) extends
     val thatTable = that.ops.table.asInstanceOf[CuckooTable].typed[T]
     val maxBuckets = math.max(thisTable.numBuckets, thatTable.numBuckets)
     val newTable = thisTable.zipFold(thatTable)(z.reserve(maxBuckets))(op)
-    ops = new CuckooFilterOps[E](newTable, ops.strategy, true)
+    ops = this.ops.copy(newTable)
+    this
+  }
+
+  def rebalance(repeat: Int = 3): CuckooFilter[E] = {
+    ops = Range.apply(0, repeat).foldLeft(ops) { (ops, _) => ops.copy(ops.rebalance()) }
     this
   }
 

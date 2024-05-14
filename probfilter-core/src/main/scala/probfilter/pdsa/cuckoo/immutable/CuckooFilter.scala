@@ -1,7 +1,7 @@
 package probfilter.pdsa.cuckoo.immutable
 
 import probfilter.pdsa.Filter
-import probfilter.pdsa.cuckoo.{CuckooFilterOps, CuckooStrategy, CuckooTableOps, EntryStorageType}
+import probfilter.pdsa.cuckoo.{CuckooFilterOps, CuckooStrategy, CuckooTableOps}
 
 import scala.util.Try
 
@@ -9,16 +9,7 @@ import scala.util.Try
 /** An immutable cuckoo filter. */
 @SerialVersionUID(1L)
 final class CuckooFilter[E] private(private val ops: CuckooFilterOps[E]) extends Filter[E] {
-  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilterOps[E](
-    strategy.storageType() match {
-      case EntryStorageType.SIMPLE_BYTE => CuckooTable.empty[Byte]
-      case EntryStorageType.SIMPLE_SHORT => CuckooTable.empty[Short]
-      case EntryStorageType.VERSIONED_INT => CuckooTable.empty[Int]
-      case EntryStorageType.VERSIONED_LONG => CuckooTable.empty[Long]
-    },
-    strategy,
-    false
-  ))
+  def this(strategy: CuckooStrategy[E]) = this(new CuckooFilterOps[E](t => CuckooTable.empty(t), strategy, false))
 
   // todo: make private
   def data: CuckooTable = ops.table.asInstanceOf[CuckooTable]
@@ -54,8 +45,12 @@ final class CuckooFilter[E] private(private val ops: CuckooFilterOps[E]) extends
     copy(newTable)
   }
 
-  private def copy(table: CuckooTableOps): CuckooFilter[E] =
-    new CuckooFilter[E](new CuckooFilterOps[E](table, ops.strategy, false))
+  def rebalance(repeat: Int = 3): CuckooFilter[E] = {
+    val newOps = Range.apply(0, repeat).foldLeft(ops) { (ops, _) => ops.copy(ops.rebalance()) }
+    new CuckooFilter[E](newOps)
+  }
+
+  private def copy(table: CuckooTableOps): CuckooFilter[E] = new CuckooFilter[E](ops.copy(table))
 
   override def toString: String = s"CF(${ops.table})"
 }
