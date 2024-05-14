@@ -6,8 +6,12 @@ import probfilter.pdsa.bloom.BloomStrategy
 /** An immutable scalable grow-only replicated bloom filter. */
 @SerialVersionUID(1L)
 final class ScGBloomFilter[E] private
-(state: Series[GBloomFilter[E]], val strategy: BloomStrategy[E]) extends CvFilterSeries[E, GBloomFilter[E]](state) {
-  /** @param strategy a strategy whose fpp is the expected compounded value */
+(state: Series[GBloomFilter[E]], val strategy: BloomStrategy[E])
+  extends CvFilterSeries[E, GBloomFilter[E]](state) {
+  /**
+   * @param strategy a strategy whose fpp is the expected compounded value
+   * @note The first sub-filter is created with `strategy.tighten()`. Note the initial `capacity`.
+   */
   def this(strategy: BloomStrategy[E]) = this(Series.empty[GBloomFilter[E]], strategy)
 
   override def fpp(): Double = strategy.fpp()

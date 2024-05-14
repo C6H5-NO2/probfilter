@@ -11,7 +11,10 @@ import scala.annotation.tailrec
 final class ScORCuckooFilter[E] private
 (state: Series[ORCuckooFilter[E]], val rid: Short, val strategy: CuckooStrategy[E])
   extends CvFilterSeries[E, ORCuckooFilter[E]](state) {
-  /** @param strategy a strategy whose fpp is the expected compounded value */
+  /**
+   * @param strategy a strategy whose fpp is the expected compounded value
+   * @note The first sub-filter is created with `strategy.tighten()`. Note the initial `capacity` and `fingerprintBits`.
+   */
   def this(strategy: CuckooStrategy[E], rid: Short) =
     this(Series.create(new ORCuckooFilter[E](strategy.tighten(), rid)), rid, strategy)
 

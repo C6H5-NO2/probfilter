@@ -8,8 +8,12 @@ import scala.annotation.tailrec
 /** An immutable scalable grow-only replicated cuckoo filter. */
 @SerialVersionUID(1L)
 final class ScGCuckooFilter[E] private
-(state: Series[GCuckooFilter[E]], val strategy: CuckooStrategy[E]) extends CvFilterSeries[E, GCuckooFilter[E]](state) {
-  /** @param strategy a strategy whose fpp is the expected compounded value */
+(state: Series[GCuckooFilter[E]], val strategy: CuckooStrategy[E])
+  extends CvFilterSeries[E, GCuckooFilter[E]](state) {
+  /**
+   * @param strategy a strategy whose fpp is the expected compounded value
+   * @note The first sub-filter is created with `strategy.tighten()`. Note the initial `capacity` and `fingerprintBits`.
+   */
   def this(strategy: CuckooStrategy[E]) = this(Series.empty[GCuckooFilter[E]], strategy)
 
   override def fpp(): Double = strategy.fpp()

@@ -14,7 +14,7 @@ final class SimpleCuckooStrategy[E] private
 (implicit private val funnel: Funnel[_ >: E])
   extends CuckooStrategy[E] {
   override def tighten(): SimpleCuckooStrategy[E] = {
-    val newCapacity = capacity + (capacity >>> 1)
+    val newCapacity = capacity // + (capacity >>> 1)
     val newFingerprintBits = fingerprintBits + 1
     val newStorageType = storageType match {
       case EntryStorageType.SIMPLE_BYTE =>
@@ -66,7 +66,7 @@ object SimpleCuckooStrategy {
     val storageTypeErrMsg = () => s"SimpleCuckooStrategy.create: storageType $storageType incompatible with fingerprint of $fingerprintBits bits"
     storageType match {
       case EntryStorageType.SIMPLE_BYTE => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
-      case EntryStorageType.SIMPLE_SHORT => require(8 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
+      case EntryStorageType.SIMPLE_SHORT => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
       case EntryStorageType.VERSIONED_INT => require(0 < fingerprintBits && fingerprintBits <= 8, storageTypeErrMsg)
       case EntryStorageType.VERSIONED_LONG => require(0 < fingerprintBits && fingerprintBits <= 16, storageTypeErrMsg)
     }
