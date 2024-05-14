@@ -180,5 +180,5 @@ private[cuckoo] final class CuckooFilterOps[E] private(
     }
   }
 
-  def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](mutable, table, strategy, extractor, rnd)
+  def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](mutable, table, strategy, extractor, rnd.copy())
 }

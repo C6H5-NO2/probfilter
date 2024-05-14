@@ -61,6 +61,6 @@ final class ScORCuckooFilter[E] private
   }
 
   override protected def copy(state: Series[ORCuckooFilter[E]]): ScORCuckooFilter[E] = {
-    new ScORCuckooFilter[E](state, rid, strategy, rnd)
+    new ScORCuckooFilter[E](state, rid, strategy, rnd.copy())
   }
 }
