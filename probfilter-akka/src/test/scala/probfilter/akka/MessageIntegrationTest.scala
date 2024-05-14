@@ -11,8 +11,9 @@ import scala.util.Random
 
 final class MessageIntegrationTest extends ScalaTestWithActorTestKit(BaseIntegrationTests.Configs.basic) with AnyFunSuiteLike {
   test("Messages should be serialized by Akka") {
-    val strategy = SimpleCuckooStrategy.create(1 << 4, 2, 20, EntryStorageType.VERSIONED_LONG)
-    val replicator = new FilterReplicator(new ReplicatedFilterKey("42"), new ORCuckooFilter(strategy, 1))
+    val strategy = SimpleCuckooStrategy.create(1 << 5, 2, 20, EntryStorageType.VERSIONED_LONG)
+    val filter = new ORCuckooFilter(strategy, 1)
+    val replicator = new FilterReplicator(new ReplicatedFilterKey("42"), filter)
     val actor = spawn(replicator.create())
     val probe = createTestProbe[Messages.Response]()
 
