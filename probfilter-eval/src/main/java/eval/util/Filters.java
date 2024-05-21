@@ -7,12 +7,10 @@ import eval.int128.Int128;
 import eval.int128.Int128Array;
 import probfilter.crdt.Convergent;
 import probfilter.pdsa.Filter;
-import scala.collection.ArrayOps;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.util.BitSet;
+import java.io.*;
+import java.util.Arrays;
+import java.util.Random;
 
 
 public final class Filters {
@@ -39,33 +37,74 @@ public final class Filters {
         return new FillResult(filter, numSuccess);
     }
 
-    public static Filter<Int128> drop(Filter<Int128> filter, Int128Array data, Slice toDrop, Slice... inserted) {
+    /**
+     * @param inserted Add an additional {@code Slice.fromLength(maxUntil, 0)} to reserve.
+     */
+    public static Filter<Int128> drop(Filter<Int128> filter, Int128Array data, Random rnd, int toDrop, Slice... inserted) {
         if (inserted.length == 0)
             throw new IllegalArgumentException();
-        //noinspection DataFlowIssue
-        int[] cumulativeInsertedLength = (int[]) (Object) ArrayOps.scanLeft$extension(
-            scala.Predef.refArrayOps(inserted), 0, (sum, slice) -> (int) sum + ((Slice) slice).length(), scala.reflect.ClassTag.Int()
-        );
-        //noinspection ConstantValue
-        assert cumulativeInsertedLength != null;
-        int insertedLength = cumulativeInsertedLength[cumulativeInsertedLength.length - 1];
-        if (insertedLength < toDrop.length())
+        int insertedSize = Arrays.stream(inserted).mapToInt(Slice::length).sum();
+        if (toDrop > insertedSize)
             throw new IllegalArgumentException();
-        var droppedMask = new BitSet(insertedLength);
-        for (int i = toDrop.from(); i < toDrop.until(); ++i) {
-            int indexToDrop = (int) (data.get(i).low() & Integer.MAX_VALUE) % insertedLength;
-            indexToDrop = droppedMask.nextClearBit(indexToDrop);
-            if (indexToDrop >= insertedLength) {
-                indexToDrop = droppedMask.nextClearBit(0);
+        int minFrom = Arrays.stream(inserted).mapToInt(Slice::from).min().getAsInt();
+        int maxUntil = Arrays.stream(inserted).mapToInt(Slice::until).max().getAsInt();
+        var containedMask = new OffsetBitSet(maxUntil, minFrom);
+        for (var ins : inserted) {
+            containedMask.set(ins.from(), ins.until());
+        }
+        return drop(filter, data, rnd, toDrop, containedMask);
+    }
+
+    /**
+     * @apiNote {@code containedMask} is mutated.
+     */
+    public static Filter<Int128> drop(Filter<Int128> filter, Int128Array data, Random rnd, int toDrop, OffsetBitSet containedMask) {
+        int insertedSize = containedMask.cardinality();
+        if (toDrop > insertedSize)
+            throw new IllegalArgumentException();
+        for (int dropped = 0, attempts = 0; dropped < toDrop; ) {
+            if (insertedSize - dropped < (1 << 10)) {
+                return dropSmall(filter, data, rnd, toDrop - dropped, containedMask);
             }
-            assert indexToDrop < insertedLength;
-            final int finalIndexToDrop = indexToDrop;
-            droppedMask.set(finalIndexToDrop);
-            int sliceIndex = ArrayOps.lastIndexWhere$extension(
-                scala.Predef.intArrayOps(cumulativeInsertedLength), (sum) -> (int) sum <= finalIndexToDrop, Integer.MAX_VALUE
-            );
-            int dataIndex = inserted[sliceIndex].from() + (finalIndexToDrop - cumulativeInsertedLength[sliceIndex]);
-            var int128 = data.get(dataIndex);
+            int minFrom = containedMask.offset;
+            int maxUntil = containedMask.length();
+            int indexToDrop = rnd.nextInt(minFrom, maxUntil);
+            if (!containedMask.get(indexToDrop)) {
+                ++attempts;
+                if (attempts > (Integer.MAX_VALUE >> 1))
+                    throw new RuntimeException();
+                continue;
+            }
+            containedMask.clear(indexToDrop);
+            var int128 = data.get(indexToDrop);
+            if (!filter.contains(int128))
+                throw new RuntimeException();
+            filter = filter.remove(int128);
+            ++dropped;
+            attempts = 0;
+        }
+        return filter;
+    }
+
+    /**
+     * @apiNote {@code containedMask} is mutated.
+     */
+    private static Filter<Int128> dropSmall(Filter<Int128> filter, Int128Array data, Random rnd, int toDrop, OffsetBitSet containedMask) {
+        // int insertedSize = containedMask.cardinality();
+        // if (insertedSize > (1 << 10))
+        //     throw new IllegalArgumentException();
+        // if (toDrop > insertedSize)
+        //     throw new IllegalArgumentException();
+        var containedArray = containedMask.stream().toArray();
+        if (toDrop > containedArray.length)
+            throw new IllegalArgumentException();
+        for (int dropped = 0; dropped < toDrop; ++dropped) {
+            int maxUntil = containedArray.length - dropped;
+            int indexInArray = rnd.nextInt(maxUntil);
+            int indexToDrop = containedArray[indexInArray];
+            containedArray[indexInArray] = containedArray[maxUntil - 1];
+            containedMask.clear(indexToDrop);
+            var int128 = data.get(indexToDrop);
             if (!filter.contains(int128))
                 throw new RuntimeException();
             filter = filter.remove(int128);
@@ -105,5 +144,26 @@ public final class Filters {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    @Deprecated
+    public static <T> T deepcopy(T obj) {
+        T copy = null;
+        try {
+            var bos = new ByteArrayOutputStream();
+            var oos = new ObjectOutputStream(bos);
+            oos.writeObject(obj);
+            oos.flush();
+            oos.close();
+            var bytes = bos.toByteArray();
+            var bis = new ByteArrayInputStream(bytes);
+            var ois = new ObjectInputStream(bis);
+            //noinspection unchecked
+            copy = (T) ois.readObject();
+            ois.close();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return copy;
     }
 }

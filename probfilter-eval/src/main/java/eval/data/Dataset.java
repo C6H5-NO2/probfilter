@@ -8,7 +8,7 @@ public final class Dataset {
     private Dataset() {}
 
     // vvv configured vvv
-    private static final int SEED = 2024;
+    public static final int SEED = 2024;
     public static final int MAX_MAGNITUDE = 20;
     public static final int MAX_REPEAT = 5;
     // ^^^ configured ^^^

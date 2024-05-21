@@ -6,9 +6,11 @@ final class EvalRecord private(private val record: Map[String, Seq[Number]]) {
 
   def this(statistics: Array[String]) = this(statistics: _*)
 
+  /** Appends to `statistic` a newly observed `value`. */
   def append(statistic: String, value: Number): EvalRecord =
     new EvalRecord(record.updated(statistic, record.apply(statistic).appended(value)))
 
+  /** Sets `statistic` to `value`. */
   def update(statistic: String, value: Number): EvalRecord = {
     if (record.apply(statistic).length > 1)
       throw new IllegalArgumentException()

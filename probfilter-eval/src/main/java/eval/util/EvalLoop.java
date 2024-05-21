@@ -5,17 +5,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 
 
 public abstract class EvalLoop {
     private final Slice loadMagnitude;
     private final int repeat;
-    private final String csvHeader;
+    private final String[] headerFields;
 
     protected EvalLoop(Slice loadMagnitude, int repeat, String... headerFields) {
         this.loadMagnitude = loadMagnitude;
         this.repeat = repeat;
-        this.csvHeader = String.join(",", headerFields);
+        this.headerFields = headerFields;
     }
 
     public final void eval(String resultsPathname) {
@@ -54,6 +55,7 @@ public abstract class EvalLoop {
     protected abstract EvalRecord repeatStep(int load, int epoch, EvalRecord records);
 
     protected void preLoadLoop(BufferedWriter writer) throws IOException {
+        var csvHeader = String.join(",", headerFields);
         writer.write(csvHeader);
         writer.write('\n');
     }
@@ -62,6 +64,9 @@ public abstract class EvalLoop {
 
     protected void preLoadStep(BufferedWriter writer, int load) throws IOException {}
 
+    /**
+     * @param milliseconds Pass a negative number to suppress printing time.
+     */
     protected void postLoadStep(BufferedWriter writer, String result, long milliseconds) throws IOException {
         writer.write(result);
         writer.write('\n');
@@ -72,10 +77,17 @@ public abstract class EvalLoop {
     }
 
     protected EvalRecord preRepeatLoop(int load) {
-        return null;
+        return new EvalRecord(headerFields);
     }
 
     protected String postRepeatLoop(int load, EvalRecord records) {
-        return "";
+        records = records.average();
+        int size = headerFields.length;
+        var format = String.join(",", Collections.nCopies(size, "%s"));
+        var args = new Object[size];
+        for (int i = 0; i < size; ++i) {
+            args[i] = records.get(headerFields[i]);
+        }
+        return String.format(format, args);
     }
 }
