@@ -1,9 +1,11 @@
 package probfilter.pdsa.cuckoo
 
+import probfilter.pdsa.cuckoo.CuckooFilterOps.InsContext
 import probfilter.util.SimpleLCG
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+import scala.util.Try
 
 
 /**
@@ -60,6 +62,12 @@ private[cuckoo] final class CuckooFilterOps[E] private(
     }
   }
 
+  /**
+   * @param triple index hash and fingerprint hash
+   * @param entry the entry to be inserted
+   * @param elem the original element; only for the purpose of logging
+   * @note The three parameters should match, i.e. pair &lt;- entry &lt;- elem.
+   */
   def add[T](triple: CuckooStrategy.Triple, entry: T, elem: Any): TypedCuckooTableOps[T] = {
     val data = table.typed[T]
     val i1 = triple.i
@@ -67,48 +75,67 @@ private[cuckoo] final class CuckooFilterOps[E] private(
     val s1 = data.size(i1)
     val s2 = data.size(i2)
     val c = strategy.bucketSize()
-    if (s1 > c)
-      throw new CuckooStrategy.BucketOverflowException(elem, i1)
-    else if (s2 > c)
-      throw new CuckooStrategy.BucketOverflowException(elem, i2)
-    else if (s1 < c)
-      data.add(i1, entry)
-    else if (s2 < c)
-      data.add(i2, entry)
-    else
-      displace(data, new CuckooStrategy.Pair(triple.i, triple.fp), entry, 0, Vector.empty[Int], elem)
+    val index =
+      if (s1 <= c && s2 > c) i1
+      else if (s1 > c && s2 <= c) i2
+      else {if (rnd.next(2) == 0) i1 else i2}
+    val context = new InsContext[T](data, strategy)
+    val res = insert(context, new CuckooStrategy.Pair(index, triple.fp), entry, elem)
+    res.ttable
   }
 
   @tailrec
-  private def displace[T](data: TypedCuckooTableOps[T],
-                          pair: CuckooStrategy.Pair, entry: T, attempts: Int, hist: Vector[Int],
-                          elem: Any): TypedCuckooTableOps[T] = {
-    if (attempts >= strategy.maxIterations()) {
-      rollback(data, pair, entry, hist)
+  private def insert[T](context: InsContext[T], pair: CuckooStrategy.Pair, entry: T, elem: Any): InsContext[T] = {
+    if (context.quota < 0) {
+      rollback(context.ttable, context.hist, pair, entry)
       throw new CuckooStrategy.MaxIterationReachedException(elem, strategy.maxIterations())
     }
-    val i1 = pair.i
-    val s1 = data.size(i1)
-    val c = strategy.bucketSize()
-    if (s1 > c) {
-      rollback(data, pair, entry, hist)
-      throw new CuckooStrategy.BucketOverflowException(elem, i1)
-    } else if (s1 < c) {
-      data.add(i1, entry)
+    val index = pair.i
+    val size = context.ttable.size(index)
+    if (size < strategy.bucketSize()) {
+      // append
+      val newTTable = context.ttable.add(index, entry)
+      context.copy(newTTable)
+    } else if (size == strategy.bucketSize()) {
+      // displace
+      val victimIndex = rnd.next(size)
+      val tup = context.ttable.replace(index, entry, victimIndex)
+      val victimEntry = tup._1
+      val newTTable = tup._2
+      val victimFp = extractor.extract(victimEntry)
+      val altIndex = strategy.altIndexOf(index, victimFp)
+      val newHist = if (mutable) context.hist.appended(victimIndex) else context.hist
+      val newContext = context.next(newTTable, newHist)
+      insert(newContext, new CuckooStrategy.Pair(altIndex, victimFp), victimEntry, elem)
     } else {
-      val victimIndex = rnd.next(s1)
-      val tup = data.replace(i1, entry, victimIndex)
-      val displacedEntry = tup._1
-      val newData = tup._2
-      val fp = extractor.extract(displacedEntry)
-      val i2 = strategy.altIndexOf(i1, fp)
-      val newHist = if (mutable) hist.appended(victimIndex) else hist
-      displace(newData, new CuckooStrategy.Pair(i2, fp), displacedEntry, attempts + 1, newHist, elem)
+      // evict - rebalance
+      val bucket = context.ttable.get(index)
+      val victimIndex = rnd.next(size)
+      val victimEntry = bucket.apply(victimIndex)
+      val victimFp = extractor.extract(victimEntry)
+      val altIndex = strategy.altIndexOf(index, victimFp)
+      if (altIndex == index) {
+        // retry
+        val newContext = context.next()
+        insert(newContext, pair, entry, elem)
+      } else {
+        val evictedTTable = context.ttable.remove(index, victimEntry)
+        val evictedHist = if (mutable) context.hist.appended(victimIndex) else context.hist
+        val evictedContext = context.next(evictedTTable, evictedHist)
+        val res = tryInsert(evictedContext, new CuckooStrategy.Pair(altIndex, victimFp), victimEntry, elem)
+        val newContext = res.getOrElse(context.last())
+        insert(newContext, pair, entry, elem)
+      }
     }
   }
 
+  /** A non-tail [[probfilter.pdsa.cuckoo.CuckooFilterOps.insert]]. */
+  private def tryInsert[T](context: InsContext[T], pair: CuckooStrategy.Pair, entry: T, elem: Any): Try[InsContext[T]] = {
+    Try.apply(insert(context, pair, entry, elem))
+  }
+
   /** @note No-Op for `!mutable` */
-  private def rollback[T](data: TypedCuckooTableOps[T], pair: CuckooStrategy.Pair, entry: T, hist: Vector[Int]): Unit = {
+  private def rollback[T](data: TypedCuckooTableOps[T], hist: Vector[Int], pair: CuckooStrategy.Pair, entry: T): Unit = {
     if (!mutable)
       return
     var currIdx = strategy.altIndexOf(pair.i, pair.fp)
@@ -160,7 +187,8 @@ private[cuckoo] final class CuckooFilterOps[E] private(
 
   private def rebalanceImpl[T](): TypedCuckooTableOps[T] = {
     val data = table.typed[T]
-    Range.apply(0, strategy.numBuckets()).foldLeft(data) { (data, index) =>
+    Range.apply(0, strategy.numBuckets()).foldLeft(data) { (data, _) =>
+      val index = rnd.next(strategy.numBuckets())
       if (data.size(index) <= strategy.bucketSize()) {
         data
       } else {
@@ -181,4 +209,23 @@ private[cuckoo] final class CuckooFilterOps[E] private(
   }
 
   def copy(table: CuckooTableOps): CuckooFilterOps[E] = new CuckooFilterOps[E](mutable, table, strategy, extractor, rnd.copy())
+}
+
+
+private[cuckoo] object CuckooFilterOps {
+  /**
+   * @param hist operation history containing the indexes of victim entries within their buckets
+   * @param quota the number of remaining available iterations
+   */
+  private class InsContext[T] private(val ttable: TypedCuckooTableOps[T], val hist: Vector[Int], val quota: Int) {
+    def this(ttable: TypedCuckooTableOps[T], strategy: CuckooStrategy[_]) = this(ttable, Vector.empty[Int], strategy.maxIterations())
+
+    def copy(ttable: TypedCuckooTableOps[T]): InsContext[T] = new InsContext[T](ttable, hist, quota)
+
+    def next(): InsContext[T] = new InsContext[T](ttable, hist, quota - 1)
+
+    def next(ttable: TypedCuckooTableOps[T], hist: Vector[Int]): InsContext[T] = new InsContext[T](ttable, hist, quota - 1)
+
+    def last(): InsContext[T] = new InsContext[T](ttable, hist, -1)
+  }
 }

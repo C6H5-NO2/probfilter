@@ -60,12 +60,6 @@ public interface CuckooStrategy<E> extends FilterHashStrategy {
 
     record Triple(int i, int j, short fp) {}
 
-    class BucketOverflowException extends RuntimeException {
-        public BucketOverflowException(Object elem, int index) {
-            super("Found overflowed bucket at " + index + " when adding " + elem);
-        }
-    }
-
     class MaxIterationReachedException extends RuntimeException {
         public MaxIterationReachedException(Object elem, int max) {
             super("Reached maximum number of iterations of " + max + " when adding " + elem);

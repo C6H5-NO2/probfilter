@@ -18,11 +18,19 @@ public final class SimpleLCG implements Serializable {
     }
 
     /**
+     * @return a non-negative random integer
+     */
+    public int next() {
+        state = (state * 1103515245 + 12345) & Integer.MAX_VALUE;
+        return state;
+    }
+
+    /**
      * @param until a positive integer
+     * @return a non-negative random integer
      */
     public int next(int until) {
-        state = (state * 1103515245 + 12345) & Integer.MAX_VALUE;
-        return state % until;
+        return next() % until;
     }
 
     /**

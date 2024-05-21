@@ -103,9 +103,9 @@ trait CvFilterTests {
 object CvFilterTests {
   private val seed: Int = 42
 
-  private val capacity = 1 << 10
+  private val capacity: Int = 1 << 10
 
-  private val load = 1 << 5
+  private val load: Int = 1 << 5
 
   private def incl1(filter: CvFilter[Int, _])(data: Int): CvFilter[Int, _] = {
     filter.add(data).asInstanceOf[CvFilter[Int, _]]
