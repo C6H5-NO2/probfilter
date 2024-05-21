@@ -16,6 +16,6 @@ final class MemEvalGSet extends MemEval {
     public static void main(String[] args) {
         var instance = new MemEvalGSet();
         instance.evalLocalAdd100("results/mem/gset_add1.00_dist1.00.csv");
-        instance.evalDistAdd100("results/mem/gset_add1.00_dist0.50.csv");
+        instance.evalDist50Add100("results/mem/gset_add1.00_dist0.50.csv");
     }
 }

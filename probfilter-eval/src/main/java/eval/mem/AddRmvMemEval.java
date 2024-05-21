@@ -1,5 +1,6 @@
 package eval.mem;
 
+import eval.data.Dataset;
 import eval.int128.Int128;
 import eval.int128.Int128Array;
 import eval.util.FilterSupplier;
@@ -8,11 +9,13 @@ import eval.util.Slice;
 import probfilter.pdsa.Filter;
 
 import java.io.BufferedWriter;
+import java.util.Random;
 
 
 final class AddRmvMemEval extends AbstractMemEval {
     private final double addRatio;
     private final FilterSupplier supplier;
+    private final Random rnd;
 
     AddRmvMemEval(int loadMagnitude, int repeat, double addRatio, FilterSupplier supplier) {
         super(loadMagnitude, repeat);
@@ -20,6 +23,7 @@ final class AddRmvMemEval extends AbstractMemEval {
             throw new IllegalArgumentException();
         this.addRatio = addRatio;
         this.supplier = supplier;
+        this.rnd = new Random(Dataset.SEED + 1);
     }
 
     @Override
@@ -30,7 +34,7 @@ final class AddRmvMemEval extends AbstractMemEval {
         var filter = supplier.get(load, (short) 1);
         filter = Filters.fill(filter, data, addSlice).filter();
         var insSlice = Slice.fromLength(addSlice.from(), filter.size());
-        filter = Filters.drop(filter, data, rmvSlice, insSlice);
+        filter = Filters.drop(filter, data, rnd, rmvSlice.length(), insSlice);
         return filter;
     }
 

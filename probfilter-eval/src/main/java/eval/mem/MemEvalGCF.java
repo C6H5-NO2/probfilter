@@ -19,6 +19,6 @@ final class MemEvalGCF extends MemEval {
     public static void main(String[] args) {
         var instance = new MemEvalGCF();
         instance.evalLocalAdd100("results/mem/gcf_bs4_f8_add1.00_dist1.00.csv");
-        instance.evalDistAdd100("results/mem/gcf_bs4_f8_add1.00_dist0.50.csv");
+        instance.evalDist50Add100("results/mem/gcf_bs4_f8_add1.00_dist0.50.csv");
     }
 }

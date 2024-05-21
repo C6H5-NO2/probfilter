@@ -22,9 +22,9 @@ final class FppEvalORCF extends FppEval {
 
     public static void main(String[] args) {
         var instance = new FppEvalORCF(Slice.fromTo(10, 20));
-        instance.evalLocal("results/orcf_bs4_f8_1.00.csv");
-        instance.evalSplit("results/orcf_bs4_f8_0.50.csv", .50);
-        instance.evalSplit("results/orcf_bs4_f8_0.80.csv", .80);
-        instance.evalSplit("results/orcf_bs4_f8_0.99.csv", .99);
+        instance.evalLocal("results/fpp/orcf_bs4_f8_1.00.csv");
+        instance.evalSplit("results/fpp/orcf_bs4_f8_0.50.csv", .50);
+        instance.evalSplit("results/fpp/orcf_bs4_f8_0.80.csv", .80);
+        instance.evalSplit("results/fpp/orcf_bs4_f8_0.99.csv", .99);
     }
 }

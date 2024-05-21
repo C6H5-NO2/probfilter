@@ -8,9 +8,9 @@ import probfilter.pdsa.Filter;
 abstract class MemEval {
     private static final int LOAD_MAGNITUDE = Dataset.MAX_MAGNITUDE;
     private static final int REPEAT = Dataset.MAX_REPEAT;
-    private static final double ADD_RATIO_1 = 0.80;
-    private static final double ADD_RATIO_2 = 0.51;
-    private static final double DIST_RATIO = 0.50;
+    private static final double ADD_RATIO_80 = 0.80;
+    private static final double ADD_RATIO_51 = 0.51;
+    private static final double DIST_RATIO_50 = 0.50;
 
     MemEval() {}
 
@@ -22,27 +22,27 @@ abstract class MemEval {
     }
 
     final void evalLocalAdd80(String resultsPath) {
-        var instance = new AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_1, this::supplyFilter);
+        var instance = new AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, this::supplyFilter);
         instance.eval(resultsPath);
     }
 
     final void evalLocalAdd51(String resultsPath) {
-        var instance = new AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_2, this::supplyFilter);
+        var instance = new AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, this::supplyFilter);
         instance.eval(resultsPath);
     }
 
-    final void evalDistAdd100(String resultsPath) {
-        var instance = new Dist2AddMemEval(LOAD_MAGNITUDE, REPEAT, DIST_RATIO, this::supplyFilter);
+    final void evalDist50Add100(String resultsPath) {
+        var instance = new Dist2AddMemEval(LOAD_MAGNITUDE, REPEAT, DIST_RATIO_50, this::supplyFilter);
         instance.eval(resultsPath);
     }
 
-    final void evalDistAdd80(String resultsPath) {
-        var instance = new Dist2AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_1, DIST_RATIO, this::supplyFilter);
+    final void evalDist50Add80(String resultsPath) {
+        var instance = new Dist2AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, DIST_RATIO_50, this::supplyFilter);
         instance.eval(resultsPath);
     }
 
-    final void evalDistAdd51(String resultsPath) {
-        var instance = new Dist2AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_2, DIST_RATIO, this::supplyFilter);
+    final void evalDist50Add51(String resultsPath) {
+        var instance = new Dist2AddRmvMemEval(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, DIST_RATIO_50, this::supplyFilter);
         instance.eval(resultsPath);
     }
 }

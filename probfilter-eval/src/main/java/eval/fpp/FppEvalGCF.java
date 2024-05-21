@@ -21,9 +21,9 @@ final class FppEvalGCF extends FppEval {
 
     public static void main(String[] args) {
         var instance = new FppEvalGCF(Slice.fromTo(10, 20));
-        instance.evalLocal("results/gcf_bs4_f8_1.00.csv");
-        instance.evalSplit("results/gcf_bs4_f8_0.50.csv", .50);
-        instance.evalSplit("results/gcf_bs4_f8_0.80.csv", .80);
-        instance.evalSplit("results/gcf_bs4_f8_0.99.csv", .99);
+        instance.evalLocal("results/fpp/gcf_bs4_f8_1.00.csv");
+        instance.evalSplit("results/fpp/gcf_bs4_f8_0.50.csv", .50);
+        instance.evalSplit("results/fpp/gcf_bs4_f8_0.80.csv", .80);
+        instance.evalSplit("results/fpp/gcf_bs4_f8_0.99.csv", .99);
     }
 }

@@ -18,8 +18,8 @@ final class MemEvalORSet extends MemEval {
         instance.evalLocalAdd100("results/mem/orset_add1.00_dist1.00.csv");
         instance.evalLocalAdd80("results/mem/orset_add0.80_dist1.00.csv");
         instance.evalLocalAdd51("results/mem/orset_add0.51_dist1.00.csv");
-        instance.evalDistAdd100("results/mem/orset_add1.00_dist0.50.csv");
-        instance.evalDistAdd80("results/mem/orset_add0.80_dist0.50.csv");
-        instance.evalDistAdd51("results/mem/orset_add0.51_dist0.50.csv");
+        instance.evalDist50Add100("results/mem/orset_add1.00_dist0.50.csv");
+        instance.evalDist50Add80("results/mem/orset_add0.80_dist0.50.csv");
+        instance.evalDist50Add51("results/mem/orset_add0.51_dist0.50.csv");
     }
 }

@@ -42,12 +42,18 @@ public abstract class AbstractMemEval extends EvalLoop {
         int capacity = load;
         var data = Dataset.acquire();
         var filter = loadFilter(capacity, data, load, epoch);
-        data = null;
-        Dataset.release();
+        // data = null;
+        // Dataset.release();
         System.gc();
-        System.out.println("System.gc();");
-        System.out.print("Enter retained size in bytes: ");
-        int retainedSize = scanner.nextInt();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+            ;
+        }
+        // System.out.println("System.gc();");
+        // System.out.print("Enter retained size in bytes: ");
+        // int retainedSize = scanner.nextInt();
+        int retainedSize = 0;
         int entries = filter.size();
         double retainedBpe = (double) retainedSize / entries;
         int serializedSize = Filters.getSerializedSize(filter);

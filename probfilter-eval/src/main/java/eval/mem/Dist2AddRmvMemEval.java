@@ -1,5 +1,6 @@
 package eval.mem;
 
+import eval.data.Dataset;
 import eval.int128.Int128;
 import eval.int128.Int128Array;
 import eval.util.FilterSupplier;
@@ -8,18 +9,22 @@ import eval.util.Slice;
 import probfilter.pdsa.Filter;
 
 import java.io.BufferedWriter;
+import java.util.Random;
 
 
 public final class Dist2AddRmvMemEval extends AbstractMemEval {
     private final double addRatio;
     private final double splitRatio;
     private final FilterSupplier supplier;
+    private final Random rnd1, rnd2;
 
     public Dist2AddRmvMemEval(int loadMagnitude, int repeat, double addRatio, double splitRatio, FilterSupplier supplier) {
         super(loadMagnitude, repeat);
         this.addRatio = addRatio;
         this.splitRatio = splitRatio;
         this.supplier = supplier;
+        this.rnd1 = new Random(Dataset.SEED + 1);
+        this.rnd2 = new Random(Dataset.SEED + 2);
     }
 
     @Override
@@ -47,8 +52,8 @@ public final class Dist2AddRmvMemEval extends AbstractMemEval {
         // should yield an equivalent copy, assuming merge is correctly implemented
         filter2 = Filters.merge(filter2, filter1);
 
-        filter1 = Filters.drop(filter1, data, rmvSlice1, insSlice1, insSlice2);
-        filter2 = Filters.drop(filter2, data, rmvSlice2, insSlice1, insSlice2);
+        filter1 = Filters.drop(filter1, data, rnd1, rmvSlice1.length(), insSlice1, insSlice2);
+        filter2 = Filters.drop(filter2, data, rnd2, rmvSlice2.length(), insSlice1, insSlice2);
 
         return Filters.merge(filter1, filter2);
     }

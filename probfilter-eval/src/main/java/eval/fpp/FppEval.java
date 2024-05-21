@@ -38,7 +38,7 @@ abstract class FppEval extends EvalLoop {
     abstract Filter<Int128> supplyFilter(int capacity, short rid);
 
     protected final void evalLocal(String resultsPathname) {
-        splitRatio = 1.0;
+        this.splitRatio = 1.0;
         eval(resultsPathname, true);
     }
 
@@ -51,7 +51,7 @@ abstract class FppEval extends EvalLoop {
 
     // i.e. abstract / override
     private boolean isLocal() {
-        return splitRatio > 0.999999;
+        return splitRatio > 0.9999;
     }
 
     private Filters.FillResult loadFilter(int capacity, Int128Array data, int load, int epoch) {
@@ -72,7 +72,7 @@ abstract class FppEval extends EvalLoop {
     }
 
     @Override
-    protected EvalRecord repeatStep(int load, int epoch, EvalRecord records) {
+    protected final EvalRecord repeatStep(int load, int epoch, EvalRecord records) {
         //noinspection UnnecessaryLocalVariable
         int capacity = load;
         var fillResult = loadFilter(capacity, data, load, epoch);
@@ -99,11 +99,6 @@ abstract class FppEval extends EvalLoop {
         } else {
             System.out.printf("load: %.2f-dist-2 %d (2^%d)%n", splitRatio, load, magnitude);
         }
-    }
-
-    @Override
-    protected final EvalRecord preRepeatLoop(int load) {
-        return new EvalRecord(CSV_HEADER_FIELDS);
     }
 
     @Override
