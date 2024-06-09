@@ -105,22 +105,14 @@ trait CvRFilterTestOps {
     val empty2 = supplyFilter(capacity, 2, IntFunnel)
     val filter1 = empty1.add(data)
     val filter2 = empty2
-    println("------------")
-    println(s"$filter1 <> $filter2")
     val (filter1m2, filter2m1) = merge(filter1, filter2)
-    println("------------")
-    println(s"$filter1m2 <> $filter2m1")
     assert(filter1m2.contains(data))
     assert(filter2m1.contains(data))
     val filter1m2o = filter1m2
     val filter2m1r = filter2m1.excl(data)
-    println("------------")
-    println(s"$filter1m2o <> $filter2m1r")
     assert(filter1m2o.contains(data))
     assert(!filter2m1r.contains(data))
     val (filter1m2m2, filter2m1m1) = merge(filter1m2o, filter2m1r)
-    println("------------")
-    println(s"$filter1m2m2 <> $filter2m1m1")
     assert(!filter1m2m2.contains(data))
     assert(!filter2m1m1.contains(data))
   }

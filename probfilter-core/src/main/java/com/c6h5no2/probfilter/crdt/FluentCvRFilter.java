@@ -17,12 +17,12 @@ public final class FluentCvRFilter<E> implements CvRFilter<E, FluentCvRFilter<E>
     private final CvRFilter<E, CvRFilter<E, ?>> filter;
 
     @SuppressWarnings("unchecked")
-    FluentCvRFilter(CvRFilter<?, ?> filter, int ignored) {
+    FluentCvRFilter(CvRFilter<?, ?> filter) {
         this.filter = (CvRFilter<E, CvRFilter<E, ?>>) filter;
     }
 
     public static <A, T extends CvRFilter<?, T>> FluentCvRFilter<A> apply(CvRFilter<? super A, T> filter) {
-        return new FluentCvRFilter<>(filter, 0);
+        return new FluentCvRFilter<>(filter);
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class FluentCvRFilter<E> implements CvRFilter<E, FluentCvRFilter<E>
     }
 
     private FluentCvRFilter<E> copy(CvRFilter<E, ?> filter) {
-        return new FluentCvRFilter<>(filter, 0);
+        return new FluentCvRFilter<>(filter);
     }
 
     @Override
