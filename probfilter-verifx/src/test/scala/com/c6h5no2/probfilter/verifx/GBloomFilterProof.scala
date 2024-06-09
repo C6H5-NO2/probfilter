@@ -1,7 +1,7 @@
-package probfilter.verifx
+package com.c6h5no2.probfilter.verifx
 
-import probfilter.verifx.lemma.CvRDTProof
-import probfilter.verifx.prover.Prover
+import com.c6h5no2.probfilter.verifx.lemma.CvRDTProof
+import com.c6h5no2.probfilter.verifx.prover.Prover
 
 
 class GBloomFilterProof extends CvRDTProof {

@@ -1,4 +1,4 @@
-import probfilter.verifx.lemma.CvRDT
+import com.c6h5no2.probfilter.verifx.lemma.CvRDT
 
 
 trait CvRDTProof[T <: CvRDT[T]] {

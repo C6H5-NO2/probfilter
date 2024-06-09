@@ -1,4 +1,4 @@
-package probfilter.verifx.prover
+package com.c6h5no2.probfilter.verifx.prover
 
 import org.verifx.Analysis.Proofs.{Aborted, ProofName, Proved, Rejected}
 import org.verifx.Compiler.ProjectCompiler

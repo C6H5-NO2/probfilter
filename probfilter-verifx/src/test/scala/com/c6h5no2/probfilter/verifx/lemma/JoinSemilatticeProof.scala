@@ -1,7 +1,7 @@
-package probfilter.verifx.lemma
+package com.c6h5no2.probfilter.verifx.lemma
 
+import com.c6h5no2.probfilter.verifx.prover.Prover
 import org.scalatest.flatspec.AnyFlatSpecLike
-import probfilter.verifx.prover.Prover
 
 
 trait JoinSemilatticeProof extends AnyFlatSpecLike {

@@ -1,6 +1,6 @@
-import probfilter.verifx.lemma.CvRDT
-import probfilter.verifx.lemma.CvRDTProof
-import probfilter.verifx.util.Complex
+import com.c6h5no2.probfilter.verifx.lemma.CvRDT
+import com.c6h5no2.probfilter.verifx.lemma.CvRDTProof
+import com.c6h5no2.probfilter.verifx.util.Complex
 
 
 class GBloomFilter(set: Set[Int]) extends CvRDT[GBloomFilter] {

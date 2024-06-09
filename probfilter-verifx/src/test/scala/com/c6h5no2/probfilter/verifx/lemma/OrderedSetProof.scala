@@ -1,4 +1,4 @@
-package probfilter.verifx.lemma
+package com.c6h5no2.probfilter.verifx.lemma
 
 
 trait OrderedSetProof extends JoinSemilatticeProof {
