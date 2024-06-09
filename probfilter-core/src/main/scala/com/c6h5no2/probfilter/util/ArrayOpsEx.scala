@@ -1,10 +1,17 @@
-package probfilter.util
+package com.c6h5no2.probfilter.util
 
 import scala.reflect.ClassTag
 
 
 object ArrayOpsEx {
   @inline def zeros[T: ClassTag](length: Int): Array[T] = Array.copyOf(Array.empty[T], length)
+
+  @inline def boxedZero[T](array: Array[T]): java.lang.Number = array match {
+    case _: Array[Byte] => java.lang.Byte.valueOf(0.asInstanceOf[Byte])
+    case _: Array[Short] => java.lang.Short.valueOf(0.asInstanceOf[Short])
+    case _: Array[Int] => java.lang.Integer.valueOf(0)
+    case _: Array[Long] => java.lang.Long.valueOf(0L)
+  }
 
   /** [[scala.collection.ArrayOps.appended]] without [[scala.reflect.ClassTag]] */
   @inline def appended[T](array: Array[T], elem: T): Array[T] = {
@@ -20,8 +27,11 @@ object ArrayOpsEx {
     dest
   }
 
-  @inline def copy[T](src: Array[T], srcPos: Int, dest: Array[T], destPos: Int, length: Int): Unit = {
-    System.arraycopy(src, srcPos, dest, destPos, length)
+  /** [[scala.collection.ArrayOps.updated]] without [[scala.reflect.ClassTag]] */
+  @inline def updated[T](array: Array[T], index: Int, elem: T): Array[T] = {
+    val dest = array.clone()
+    dest.update(index, elem)
+    dest
   }
 
   @inline def removedAt[T](array: Array[T], index: Int): Array[T] = {
@@ -30,17 +40,8 @@ object ArrayOpsEx {
     dest
   }
 
-  @inline def boxedZero[T](array: Array[T]): java.lang.Number = array match {
-    case _: Array[Byte] => java.lang.Byte.valueOf(0.asInstanceOf[Byte])
-    case _: Array[Short] => java.lang.Short.valueOf(0.asInstanceOf[Short])
-    case _: Array[Int] => java.lang.Integer.valueOf(0)
-    case _: Array[Long] => java.lang.Long.valueOf(0L)
-  }
-
-  /** [[scala.collection.ArrayOps.updated]] without [[scala.reflect.ClassTag]] */
-  @inline def updated[T](array: Array[T], index: Int, elem: T): Array[T] = {
-    val dest = array.clone()
-    dest.update(index, elem)
-    dest
+  /** @note `dest` is mutated in-place. */
+  @inline def copyTo[T](src: Array[T], srcPos: Int, dest: Array[T], destPos: Int, length: Int): Unit = {
+    System.arraycopy(src, srcPos, dest, destPos, length)
   }
 }

@@ -1,13 +1,12 @@
-package probfilter.util;
+package com.c6h5no2.probfilter.util;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 
 /**
- * A mutable linear congruential generator.
+ * A linear congruential generator.
  */
-public final class SimpleLCG implements Serializable {
+public final class SimpleLCG implements RandomIntGenerator {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -17,28 +16,16 @@ public final class SimpleLCG implements Serializable {
         this.state = ~seed;
     }
 
-    /**
-     * @return a non-negative random integer
-     */
-    public int next() {
+    @Override
+    public int nextInt() {
         state = (state * 1103515245 + 12345) & Integer.MAX_VALUE;
         return state;
     }
 
-    /**
-     * @param until a positive integer
-     * @return a non-negative random integer
-     */
-    public int next(int until) {
-        return next() % until;
-    }
-
-    /**
-     * @return a new instance of {@code SimpleLCG} with the same state
-     */
+    @Override
     public SimpleLCG copy() {
-        var rnd = new SimpleLCG(0);
-        rnd.state = this.state;
-        return rnd;
+        var rng = new SimpleLCG(0);
+        rng.state = this.state;
+        return rng;
     }
 }

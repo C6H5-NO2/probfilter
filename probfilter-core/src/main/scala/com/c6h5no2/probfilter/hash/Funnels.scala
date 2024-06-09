@@ -1,45 +1,54 @@
-package probfilter.hash
-
-import probfilter.util.JavaFriendly
+package com.c6h5no2.probfilter.hash
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 import java.nio.charset.StandardCharsets
 
 
-/** Common [[probfilter.hash.Funnel]]s. */
+/** Common [[Funnel]]s. */
 object Funnels {
+  /**
+   * [[Funnel]] for Scala's [[scala.Int]].
+   *
+   * @see [[Funnels.IntegerFunnel]]
+   */
   @SerialVersionUID(1L)
-  implicit final object StringFunnel extends Funnel[String] {
-    override def funnel(from: String, into: Sink): Unit = into.putString(from, StandardCharsets.UTF_8)
+  object IntFunnel extends Funnel[Int] {
+    override def apply(from: Int, into: Sink): Unit = into.putInt(from)
   }
 
+  /**
+   * [[Funnel]] for Java's [[java.lang.Integer]].
+   *
+   * @see [[Funnels.IntFunnel]], [[Funnels.getIntegerFunnel]]
+   */
   @SerialVersionUID(1L)
-  implicit final object IntFunnel extends Funnel[Int] {
-    override def funnel(from: Int, into: Sink): Unit = into.putInt(from)
+  private object IntegerFunnel extends Funnel[Integer] {
+    override def apply(from: Integer, into: Sink): Unit = into.putInt(from)
   }
 
+  /** [[Funnel]] for UTF-8 [[java.lang.String]]. */
   @SerialVersionUID(1L)
-  private final object IntegerFunnel extends Funnel[Integer] {
-    override def funnel(from: Integer, into: Sink): Unit = into.putInt(from)
+  object StringFunnel extends Funnel[String] {
+    override def apply(from: String, into: Sink): Unit = into.putString(from, StandardCharsets.UTF_8)
   }
 
+  /** [[Funnel]] for [[java.io.Serializable]]. */
   @SerialVersionUID(1L)
-  /* implicit */ final object DefaultFunnel extends Funnel[Object] {
-    override def funnel(from: Object, into: Sink): Unit = {
+  object DefaultFunnel extends Funnel[Object] {
+    override def apply(from: Object, into: Sink): Unit = {
       val bos = new ByteArrayOutputStream()
       val oos = new ObjectOutputStream(bos)
       oos.writeObject(from)
+      oos.flush()
       oos.close()
-      into.putBytes(bos.toByteArray)
+      val bytes = bos.toByteArray
+      into.putBytes(bytes)
     }
   }
 
-  @JavaFriendly(scalaDelegate = "probfilter.hash.Funnels.StringFunnel")
-  def getStringFunnel: Funnel[String] = StringFunnel
-
-  @JavaFriendly(scalaDelegate = "probfilter.hash.Funnels.IntFunnel")
   def getIntegerFunnel: Funnel[Integer] = IntegerFunnel
 
-  @JavaFriendly(scalaDelegate = "probfilter.hash.Funnels.DefaultFunnel")
+  def getStringFunnel: Funnel[String] = StringFunnel
+
   def getDefaultFunnel: Funnel[Object] = DefaultFunnel
 }

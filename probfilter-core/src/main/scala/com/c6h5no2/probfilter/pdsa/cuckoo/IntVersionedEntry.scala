@@ -1,9 +1,13 @@
-package probfilter.pdsa.cuckoo
+package com.c6h5no2.probfilter.pdsa.cuckoo
 
-import probfilter.util.UnsignedNumber
-import probfilter.util.UnsignedVal._
+import com.c6h5no2.probfilter.util.UnsignedNumber
 
 
+/**
+ * An immutable 32-bit cuckoo entry comprises 8-bit fingerprint, 4-bit replica id, and 20-bit timestamp.
+ *
+ * @note This class is a value class which avoids runtime object allocation (in some cases).
+ */
 final class IntVersionedEntry(private val data: Int) extends AnyVal {
   /** @return 8-bit unsigned fingerprint */
   @inline def fingerprint: Short = ((data >>> 24) & 0xff).toShort
@@ -20,15 +24,18 @@ final class IntVersionedEntry(private val data: Int) extends AnyVal {
 
   @inline def toInt: Int = data
 
-  override def toString: String =
-    s"VE(f${fingerprint.toUString}, r${replicaId.toUString}, t${timestamp.toUString})"
+  override def toString: String = {
+    val f = UnsignedNumber.toString(fingerprint)
+    val r = UnsignedNumber.toString(replicaId)
+    val t = UnsignedNumber.toString(timestamp)
+    s"(f$f, r$r, t$t)"
+  }
 }
 
-
 object IntVersionedEntry {
-  @inline def create(data: Int): IntVersionedEntry = new IntVersionedEntry(data)
+  @inline def apply(data: Int): IntVersionedEntry = new IntVersionedEntry(data)
 
-  @inline def create(fingerprint: Short, replicaId: Short, timestamp: Int): IntVersionedEntry = {
+  @inline def apply(fingerprint: Short, replicaId: Short, timestamp: Int): IntVersionedEntry = {
     val data = parse(fingerprint, replicaId, timestamp)
     new IntVersionedEntry(data)
   }
@@ -40,6 +47,5 @@ object IntVersionedEntry {
     fp | id | ts
   }
 
-  /** Extracts the fingerprint from `data`. */
   @inline def extract(data: Int): Short = ((data >>> 24) & 0xff).toShort
 }

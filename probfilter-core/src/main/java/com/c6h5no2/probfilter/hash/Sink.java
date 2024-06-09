@@ -1,5 +1,6 @@
-package probfilter.hash;
+package com.c6h5no2.probfilter.hash;
 
+import com.c6h5no2.probfilter.util.Mutable;
 import com.google.common.hash.PrimitiveSink;
 
 import java.nio.ByteBuffer;
@@ -7,10 +8,12 @@ import java.nio.charset.Charset;
 
 
 /**
- * A <i>mutable</i> collection that accumulates primitive values for hashing.
+ * A mutable sink that accumulates primitive values for hashing.
+ *
+ * @see Funnel
  */
 @SuppressWarnings("UnstableApiUsage")
-public final class Sink {
+public final class Sink implements Mutable {
     private final PrimitiveSink sink;
 
     Sink(PrimitiveSink sink) {

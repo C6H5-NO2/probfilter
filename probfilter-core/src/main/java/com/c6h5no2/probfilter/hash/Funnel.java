@@ -1,15 +1,17 @@
-package probfilter.hash;
+package com.c6h5no2.probfilter.hash;
 
 import java.io.Serializable;
 
 
 /**
- * @see probfilter.hash.Funnels$ probfilter.hash.Funnels
+ * A funnel that unpacks an object as primitive values.
+ *
+ * @see Funnels$ Funnels
  */
 @FunctionalInterface
 public interface Funnel<T> extends Serializable {
     /**
-     * Unpacks {@code from} as primitives into {@code into}.
+     * Unpacks {@code T from} as primitives into {@link Sink} {@code into}.
      */
-    void funnel(T from, Sink into);
+    void apply(T from, Sink into);
 }

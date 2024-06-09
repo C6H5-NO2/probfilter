@@ -1,4 +1,4 @@
-package probfilter.hash
+package com.c6h5no2.probfilter.hash
 
 import com.google.common.primitives.Ints
 

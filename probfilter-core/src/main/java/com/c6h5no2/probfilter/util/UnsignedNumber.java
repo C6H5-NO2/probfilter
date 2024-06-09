@@ -1,4 +1,4 @@
-package probfilter.util;
+package com.c6h5no2.probfilter.util;
 
 
 public final class UnsignedNumber {

@@ -1,12 +1,12 @@
-package probfilter.pdsa.cuckoo
+package com.c6h5no2.probfilter.pdsa.cuckoo
 
-import probfilter.util.UnsignedNumber
-import probfilter.util.UnsignedVal._
+import com.c6h5no2.probfilter.util.UnsignedNumber
 
 
 /**
- * An immutable wrapper of 64-bit unsigned long representing an entry in the cuckoo table.
- * This class is a value class which avoids runtime object allocation in Scala.
+ * An immutable 64-bit cuckoo entry comprises 16-bit fingerprint, 16-bit replica id, and 32-bit timestamp.
+ *
+ * @note This class is a value class which avoids runtime object allocation (in some cases).
  */
 final class LongVersionedEntry(private val data: Long) extends AnyVal {
   /** @return 16-bit unsigned fingerprint */
@@ -24,15 +24,18 @@ final class LongVersionedEntry(private val data: Long) extends AnyVal {
 
   @inline def toLong: Long = data
 
-  override def toString: String =
-    s"VE(f${fingerprint.toUString}, r${replicaId.toUString}, t${timestamp.toUString})"
+  override def toString: String = {
+    val f = UnsignedNumber.toString(fingerprint)
+    val r = UnsignedNumber.toString(replicaId)
+    val t = UnsignedNumber.toString(timestamp)
+    s"(f$f, r$r, t$t)"
+  }
 }
 
-
 object LongVersionedEntry {
-  @inline def create(data: Long): LongVersionedEntry = new LongVersionedEntry(data)
+  @inline def apply(data: Long): LongVersionedEntry = new LongVersionedEntry(data)
 
-  @inline def create(fingerprint: Short, replicaId: Short, timestamp: Int): LongVersionedEntry = {
+  @inline def apply(fingerprint: Short, replicaId: Short, timestamp: Int): LongVersionedEntry = {
     val data = parse(fingerprint, replicaId, timestamp)
     new LongVersionedEntry(data)
   }
@@ -44,6 +47,5 @@ object LongVersionedEntry {
     fp | id | ts
   }
 
-  /** Extracts the fingerprint from `data`. */
   @inline def extract(data: Long): Short = ((data >>> 48) & 0xffffL).toShort
 }

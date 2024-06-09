@@ -1,15 +1,11 @@
-package probfilter.pdsa.bloom;
+package com.c6h5no2.probfilter.pdsa.bloom;
 
-import probfilter.pdsa.FilterHashStrategy;
-import probfilter.util.JavaFriendly;
+import com.c6h5no2.probfilter.pdsa.HashStrategy;
 
 import java.util.PrimitiveIterator;
 
 
-/**
- * @see probfilter.pdsa.bloom.SimpleBloomStrategy
- */
-public interface BloomStrategy<E> extends FilterHashStrategy {
+public interface BloomStrategy<E> extends HashStrategy {
     @Override
     default double fpp() {
         return Math.pow(-Math.expm1(-1.0 * capacity() / numBits() * numHashes()), numHashes());
@@ -23,11 +19,10 @@ public interface BloomStrategy<E> extends FilterHashStrategy {
     int numHashes();
 
     /**
-     * @return an iterator over the hash values of `elem`
+     * @return an iterator over the hash values of {@code elem}
      */
     scala.collection.Iterator<scala.Int> hashIterator(E elem);
 
-    @JavaFriendly(scalaDelegate = "probfilter.pdsa.bloom.BloomStrategy#hashIterator(E)")
     default PrimitiveIterator.OfInt hashIteratorAsJava(E elem) {
         var iter = hashIterator(elem);
         return new PrimitiveIterator.OfInt() {

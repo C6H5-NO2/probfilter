@@ -1,12 +1,9 @@
-package probfilter.pdsa.cuckoo;
+package com.c6h5no2.probfilter.pdsa.cuckoo;
 
-import probfilter.pdsa.FilterHashStrategy;
+import com.c6h5no2.probfilter.pdsa.HashStrategy;
 
 
-/**
- * @see probfilter.pdsa.cuckoo.SimpleCuckooStrategy
- */
-public interface CuckooStrategy<E> extends FilterHashStrategy {
+public interface CuckooStrategy<E> extends HashStrategy {
     @Override
     default double fpp() {
         return 2.0 * bucketSize() / (1 << fingerprintBits());
@@ -15,15 +12,30 @@ public interface CuckooStrategy<E> extends FilterHashStrategy {
     @Override
     CuckooStrategy<E> tighten();
 
+    /**
+     * @return number of buckets in the cuckoo table
+     */
     int numBuckets();
 
+    /**
+     * @return expected number of slots per bucket
+     */
     int bucketSize();
 
+    /**
+     * @return quota for cuckoo eviction
+     */
     int maxIterations();
 
+    /**
+     * @return length of fingerprint in bits
+     */
     int fingerprintBits();
 
-    EntryStorageType storageType();
+    /**
+     * @return semantic type of entry
+     */
+    CuckooEntryType entryType();
 
     /**
      * @return {@code 0 <= i < numBuckets}
@@ -36,7 +48,7 @@ public interface CuckooStrategy<E> extends FilterHashStrategy {
     short fingerprintHash(E elem);
 
     /**
-     * Any involution suffices.
+     * @implNote Any involution (given {@code fp}) suffices.
      */
     int altIndexOf(int i, short fp);
 
@@ -60,7 +72,7 @@ public interface CuckooStrategy<E> extends FilterHashStrategy {
 
     record Triple(int i, int j, short fp) {}
 
-    class MaxIterationReachedException extends RuntimeException {
+    final class MaxIterationReachedException extends RuntimeException {
         public MaxIterationReachedException(Object elem, int max) {
             super("Reached maximum number of iterations of " + max + " when adding " + elem);
         }
