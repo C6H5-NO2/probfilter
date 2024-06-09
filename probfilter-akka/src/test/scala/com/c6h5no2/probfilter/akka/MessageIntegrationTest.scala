@@ -1,26 +1,27 @@
-package probfilter.akka
+package com.c6h5no2.probfilter.akka
 
 import akka.actor.testkit.typed.scaladsl.{FishingOutcomes, ScalaTestWithActorTestKit}
+import com.c6h5no2.probfilter.crdt.ORCuckooFilter
+import com.c6h5no2.probfilter.hash.Funnels.IntFunnel
+import com.c6h5no2.probfilter.pdsa.cuckoo.{CuckooEntryType, CuckooStrategy, SimpleCuckooStrategy}
 import org.scalatest.funsuite.AnyFunSuiteLike
-import probfilter.crdt.immutable.ORCuckooFilter
-import probfilter.hash.Funnels.IntFunnel
-import probfilter.pdsa.cuckoo.{CuckooStrategy, EntryStorageType, SimpleCuckooStrategy}
 
 import scala.util.Random
 
 
-final class MessageIntegrationTest extends ScalaTestWithActorTestKit(BaseIntegrationTests.Configs.basic) with AnyFunSuiteLike {
+final class MessageIntegrationTest
+  extends ScalaTestWithActorTestKit(IntegrationTestOps.Configs.basic)
+  with AnyFunSuiteLike {
   test("Messages should be serialized by Akka") {
-    val strategy = SimpleCuckooStrategy.create(1 << 10, 2, 500, EntryStorageType.VERSIONED_LONG)
-    val filter = new ORCuckooFilter(strategy, 1)
-    val replicator = new FilterReplicator(new ReplicatedFilterKey("42"), filter)
-    val actor = spawn(replicator.create())
+    val strategy = SimpleCuckooStrategy.apply(1 << 10, 2, 100, CuckooEntryType.VERSIONED_LONG, IntFunnel)
+    val filter = new ORCuckooFilter.Immutable(strategy, 1)
+    val replicator = FilterReplicator.apply(new ReplicatedFilterKey("42"), ReplicatedFilter.apply(filter))
+    val actor = spawn(replicator)
     val probe = createTestProbe[Messages.Response]()
 
-    val seed = 42
+    val rng = new Random(42)
     val load = strategy.capacity
-    val rnd = new Random(seed)
-    val data = Seq.fill(load)(rnd.nextInt())
+    val data = Seq.fill(load)(rng.nextInt())
 
     actor tell Messages.Contains(data.head, probe.ref)
     probe expectMessage Messages.ContainsResponse(data.head, false)
