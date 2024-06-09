@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.pdsa.bloom.{BloomFilter, BloomStrategy}
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{Immutable => ImmCol, Mutable => MutCol}
 
 
@@ -24,7 +25,7 @@ sealed trait GBloomFilter[E] extends CvRFilter[E, GBloomFilter[E]] {
 
   protected def copy(state: BloomFilter[E]): GBloomFilter[E]
 
-  override def toString: String = s"${getClass.getName}($state)"
+  override def toString: String = s"${getClass.getShortName}($state)"
 }
 
 object GBloomFilter {

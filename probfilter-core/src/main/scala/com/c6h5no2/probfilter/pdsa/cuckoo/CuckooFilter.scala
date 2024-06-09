@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.pdsa.cuckoo
 
 import com.c6h5no2.probfilter.pdsa.Filter
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{RandomIntGenerator, SimpleLCG, Immutable => ImmCol, Mutable => MutCol}
 
 import scala.annotation.tailrec
@@ -235,7 +236,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
 
   protected def copy(table: CuckooTable, rng: RandomIntGenerator): CuckooFilter[E]
 
-  override def toString: String = s"${getClass.getName}($table)"
+  override def toString: String = s"${getClass.getShortName}($table)"
 }
 
 object CuckooFilter {

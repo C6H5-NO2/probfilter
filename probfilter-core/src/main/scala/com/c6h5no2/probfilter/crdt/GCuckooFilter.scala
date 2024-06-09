@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.pdsa.cuckoo.{CuckooEntryType, CuckooFilter, CuckooStrategy}
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{Immutable => ImmCol, Mutable => MutCol}
 
 
@@ -10,7 +11,7 @@ sealed trait GCuckooFilter[E] extends CvRFilter[E, GCuckooFilter[E]] {
     val entryType = state.strategy.entryType
     require(
       entryType.ordinal() <= CuckooEntryType.SIMPLE_SHORT.ordinal(),
-      s"${getClass.getName}.<init>: entryType $entryType is not CuckooEntryType.SIMPLE_*"
+      s"${getClass.getShortName}.<init>: entryType $entryType is not CuckooEntryType.SIMPLE_*"
     )
   }
 
@@ -51,7 +52,7 @@ sealed trait GCuckooFilter[E] extends CvRFilter[E, GCuckooFilter[E]] {
 
   protected def copy(state: CuckooFilter[E]): GCuckooFilter[E]
 
-  override def toString: String = s"${getClass.getName}($state)"
+  override def toString: String = s"${getClass.getShortName}($state)"
 }
 
 object GCuckooFilter {

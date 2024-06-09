@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.pdsa.cuckoo.CuckooStrategy
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{RandomIntGenerator, SimpleLCG, Immutable => ImmCol, Mutable => MutCol}
 
 import scala.annotation.tailrec
@@ -73,7 +74,7 @@ sealed trait ScORCuckooFilter[E] extends CvRFilter[E, ScORCuckooFilter[E]] {
     rng: RandomIntGenerator,
   ): ScORCuckooFilter[E]
 
-  override def toString: String = s"${getClass.getName}($state)"
+  override def toString: String = s"${getClass.getShortName}($state)"
 }
 
 object ScORCuckooFilter {

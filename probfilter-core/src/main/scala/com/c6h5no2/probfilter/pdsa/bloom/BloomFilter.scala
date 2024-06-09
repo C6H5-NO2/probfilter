@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.pdsa.bloom
 
 import com.c6h5no2.probfilter.pdsa.Filter
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{Immutable => ImmCol, Mutable => MutCol}
 
 
@@ -34,7 +35,7 @@ sealed trait BloomFilter[E] extends Filter[E, BloomFilter[E]] {
 
   protected def copy(bitset: BitSet): BloomFilter[E]
 
-  override def toString: String = s"${getClass.getName}($bitset)"
+  override def toString: String = s"${getClass.getShortName}($bitset)"
 }
 
 object BloomFilter {

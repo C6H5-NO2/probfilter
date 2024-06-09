@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.pdsa.cuckoo._
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{ArrayOpsEx, Immutable => ImmCol, Mutable => MutCol}
 
 
@@ -10,7 +11,7 @@ sealed trait ORCuckooFilter[E] extends CvRFilter[E, ORCuckooFilter[E]] {
     val entryType = state.strategy.entryType
     require(
       entryType.ordinal() >= CuckooEntryType.VERSIONED_INT.ordinal(),
-      s"${getClass.getName}.<init>: entryType $entryType is not CuckooEntryType.VERSIONED_*"
+      s"${getClass.getShortName}.<init>: entryType $entryType is not CuckooEntryType.VERSIONED_*"
     )
   }
 
@@ -95,7 +96,7 @@ sealed trait ORCuckooFilter[E] extends CvRFilter[E, ORCuckooFilter[E]] {
 
   protected def copy(state: CuckooFilter[E], hist: VersionVector): ORCuckooFilter[E]
 
-  override def toString: String = s"${getClass.getName}($rid, $state, $hist)"
+  override def toString: String = s"${getClass.getShortName}($rid, $state, $hist)"
 }
 
 object ORCuckooFilter {

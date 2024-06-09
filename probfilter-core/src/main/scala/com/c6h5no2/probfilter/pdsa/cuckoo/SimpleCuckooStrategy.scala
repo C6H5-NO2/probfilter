@@ -2,6 +2,7 @@ package com.c6h5no2.probfilter.pdsa.cuckoo
 
 import com.c6h5no2.probfilter.hash.FoldHash.{BytesHashCode, LongHashCode}
 import com.c6h5no2.probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.google.common.math.IntMath
 
 import scala.util.Try
@@ -74,12 +75,12 @@ object SimpleCuckooStrategy {
     entryType: CuckooEntryType,
     funnel: Funnel[_ >: E],
   ): SimpleCuckooStrategy[E] = {
-    require(capacity > 0, s"${getClass.getName}.apply: capacity = $capacity not > 0")
-    require(1 <= bucketSize && bucketSize <= 16, s"${getClass.getName}.apply: bucketSize = $bucketSize !in [1, 16]")
+    require(capacity > 0, s"${getClass.getShortName}.apply: capacity = $capacity not > 0")
+    require(1 <= bucketSize && bucketSize <= 16, s"${getClass.getShortName}.apply: bucketSize = $bucketSize !in [1, 16]")
     val numBuckets = Try.apply(IntMath.ceilingPowerOfTwo(capacity / bucketSize))
-    require(numBuckets.isSuccess, s"${getClass.getName}.apply: numBuckets cannot be calculated given capacity $capacity and bucketSize $bucketSize")
-    require(maxIterations >= 0, s"${getClass.getName}.apply: maxIterations = $maxIterations < 0")
-    val entryTypeErrMsg = () => s"${getClass.getName}.apply: entryType $entryType incompatible with fingerprint of $fingerprintBits bits"
+    require(numBuckets.isSuccess, s"${getClass.getShortName}.apply: numBuckets cannot be calculated given capacity $capacity and bucketSize $bucketSize")
+    require(maxIterations >= 0, s"${getClass.getShortName}.apply: maxIterations = $maxIterations < 0")
+    val entryTypeErrMsg = () => s"${getClass.getShortName}.apply: entryType $entryType incompatible with fingerprint of $fingerprintBits bits"
     entryType match {
       case CuckooEntryType.SIMPLE_BYTE => require(0 < fingerprintBits && fingerprintBits <= 8, entryTypeErrMsg)
       case CuckooEntryType.SIMPLE_SHORT => require(0 < fingerprintBits && fingerprintBits <= 16, entryTypeErrMsg)
@@ -88,7 +89,7 @@ object SimpleCuckooStrategy {
     }
     val fpReqLhs = 2 * bucketSize * fingerprintBits
     val fpReqRhs = math.floor(math.log(capacity) / math.log(2))
-    require(fpReqLhs >= fpReqRhs, s"${getClass.getName}.apply: expect 4 ^ (bucketSize * fingerprintBits) > \\Omega(capacity), but $fpReqLhs < $fpReqRhs")
+    require(fpReqLhs >= fpReqRhs, s"${getClass.getShortName}.apply: expect 4 ^ (bucketSize * fingerprintBits) > \\Omega(capacity), but $fpReqLhs < $fpReqRhs")
     new SimpleCuckooStrategy[E](capacity, numBuckets.get, bucketSize, maxIterations, fingerprintBits, entryType, funnel)
   }
 

@@ -2,6 +2,7 @@ package com.c6h5no2.probfilter.pdsa.bloom
 
 import com.c6h5no2.probfilter.hash.FoldHash.{BytesHashCode, LongHashCode}
 import com.c6h5no2.probfilter.hash.{FarmHashFingerprint64, Funnel, MurMurHash3}
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 
 
 @SerialVersionUID(1L)
@@ -30,12 +31,12 @@ object SimpleBloomStrategy {
    * @throws java.lang.IllegalArgumentException if any argument is illegal
    */
   def apply[E](capacity: Int, fpp: Double, funnel: Funnel[_ >: E]): SimpleBloomStrategy[E] = {
-    require(capacity > 0, s"${getClass.getName}.apply: capacity = $capacity not > 0")
-    require(0 < fpp && fpp < 1, s"${getClass.getName}.apply: fpp = $fpp not in (0, 1)")
+    require(capacity > 0, s"${getClass.getShortName}.apply: capacity = $capacity not > 0")
+    require(0 < fpp && fpp < 1, s"${getClass.getShortName}.apply: fpp = $fpp not in (0, 1)")
     val m = optimalBits(fpp, capacity)
-    require(0 < m && m < Int.MaxValue, s"${getClass.getName}.apply: optimalBits = $m too large")
+    require(0 < m && m < Int.MaxValue, s"${getClass.getShortName}.apply: optimalBits = $m too large")
     val h = optimalHashes(fpp)
-    require(0 < h && h < Byte.MaxValue, s"${getClass.getName}.apply: optimalHashes = $h too large")
+    require(0 < h && h < Byte.MaxValue, s"${getClass.getShortName}.apply: optimalHashes = $h too large")
     new SimpleBloomStrategy[E](capacity, m, h, fpp, funnel)
   }
 

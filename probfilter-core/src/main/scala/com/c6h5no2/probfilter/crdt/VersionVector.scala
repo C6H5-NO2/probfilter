@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.util
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.UnsignedNumber
 
 import scala.collection.immutable.TreeMap
@@ -39,7 +40,7 @@ final class VersionVector private(
     version
       .view
       .map(tup => s"${UnsignedNumber.toString(tup._1)}->${UnsignedNumber.toString(tup._2)}")
-      .mkString(s"${getClass.getName}(", ", ", ")")
+      .mkString(s"${getClass.getShortName}(", ", ", ")")
   }
 }
 

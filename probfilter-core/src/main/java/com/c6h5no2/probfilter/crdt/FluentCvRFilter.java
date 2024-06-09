@@ -1,5 +1,6 @@
 package com.c6h5no2.probfilter.crdt;
 
+import com.c6h5no2.probfilter.util.ClassEx;
 import com.google.common.base.MoreObjects;
 import scala.util.Failure;
 import scala.util.Try;
@@ -82,6 +83,6 @@ public final class FluentCvRFilter<E> implements CvRFilter<E, FluentCvRFilter<E>
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("filter", filter).toString();
+        return MoreObjects.toStringHelper(ClassEx.getShortName(this.getClass())).add("filter", filter).toString();
     }
 }

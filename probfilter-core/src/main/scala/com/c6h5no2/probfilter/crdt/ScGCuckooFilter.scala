@@ -1,6 +1,7 @@
 package com.c6h5no2.probfilter.crdt
 
 import com.c6h5no2.probfilter.pdsa.cuckoo.CuckooStrategy
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{Immutable => ImmCol, Mutable => MutCol}
 
 import scala.annotation.tailrec
@@ -40,7 +41,7 @@ sealed trait ScGCuckooFilter[E] extends CvRFilter[E, ScGCuckooFilter[E]] {
 
   protected def copy(state: FilterSeries[E, GCuckooFilter[E]]): ScGCuckooFilter[E]
 
-  override def toString: String = s"${getClass.getName}($state)"
+  override def toString: String = s"${getClass.getShortName}($state)"
 }
 
 object ScGCuckooFilter {

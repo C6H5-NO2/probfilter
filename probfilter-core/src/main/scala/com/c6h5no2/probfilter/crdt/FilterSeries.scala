@@ -1,5 +1,6 @@
 package com.c6h5no2.probfilter.crdt
 
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.Immutable
 
 import scala.annotation.tailrec
@@ -122,5 +123,5 @@ final class FilterSeries[E, F <: CvRFilter[E, F] : ClassTag] private(
     new FilterSeries[E, F](series, this.supplier)
   }
 
-  override def toString: String = s"${getClass.getName}($series)"
+  override def toString: String = s"${getClass.getShortName}($series)"
 }

@@ -2,6 +2,7 @@ package com.c6h5no2.probfilter.akka;
 
 import akka.cluster.ddata.ReplicatedData;
 import com.c6h5no2.probfilter.crdt.CvRFilter;
+import com.c6h5no2.probfilter.util.ClassEx;
 import com.c6h5no2.probfilter.util.Immutable;
 import com.google.common.base.MoreObjects;
 
@@ -83,6 +84,6 @@ public final class ReplicatedFilter implements ReplicatedData, CvRFilter<Object,
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("filter", filter).toString();
+        return MoreObjects.toStringHelper(ClassEx.getShortName(this.getClass())).add("filter", filter).toString();
     }
 }

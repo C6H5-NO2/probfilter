@@ -1,5 +1,6 @@
 package com.c6h5no2.probfilter.pdsa.cuckoo
 
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{ArrayOpsEx, Immutable => ImmCol, Mutable => MutCol}
 
 import scala.collection.{SortedMap, immutable, mutable}
@@ -25,7 +26,7 @@ sealed trait MapCuckooTable[T] extends TypedCuckooTable[T] {
     data
       .view
       .map(tup => tup._2.mkString(s"${tup._1}->[", ", ", "]"))
-      .mkString(s"${getClass.getName}{", ", ", "}")
+      .mkString(s"${getClass.getShortName}{", ", ", "}")
   }
 }
 

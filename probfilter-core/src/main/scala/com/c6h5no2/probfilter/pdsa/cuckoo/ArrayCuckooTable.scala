@@ -1,5 +1,6 @@
 package com.c6h5no2.probfilter.pdsa.cuckoo
 
+import com.c6h5no2.probfilter.util.ClassEx.Clazz
 import com.c6h5no2.probfilter.util.{ArrayOpsEx, Immutable => ImmCol, Mutable => MutCol}
 
 import scala.collection.AbstractIterator
@@ -36,7 +37,7 @@ sealed trait ArrayCuckooTable[T] extends TypedCuckooTable[T] {
       .zipWithIndex
       .filter(_._1.nonEmpty)
       .map(tup => tup._1.mkString(s"${tup._2}->[", ", ", "]"))
-      .mkString(s"${getClass.getName}{", ", ", "}")
+      .mkString(s"${getClass.getShortName}{", ", ", "}")
   }
 }
 
