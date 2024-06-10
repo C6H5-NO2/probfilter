@@ -1,4 +1,4 @@
-package eval.akka;
+package eval.util;
 
 import akka.cluster.ddata.protobuf.ReplicatedDataSerializer;
 import akka.cluster.ddata.protobuf.msg.ReplicatorMessages;

@@ -1,4 +1,4 @@
-package eval.akka;
+package eval.filter;
 
 import akka.actor.Address;
 import akka.cluster.UniqueAddress;

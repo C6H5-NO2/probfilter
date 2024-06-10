@@ -1,4 +1,4 @@
-package eval.akka;
+package eval.filter;
 
 import akka.cluster.ddata.GSet;
 import com.c6h5no2.probfilter.crdt.CvRFilter;

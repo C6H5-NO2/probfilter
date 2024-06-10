@@ -1,12 +1,12 @@
-package eval.util;
+package eval.filter;
 
 import com.c6h5no2.probfilter.crdt.CvRFilter;
 import com.c6h5no2.probfilter.crdt.FluentCvRFilter;
-import eval.akka.AkkaGSet;
-import eval.akka.AkkaORSet;
-import eval.akka.AkkaSerializer;
 import eval.int128.Int128;
 import eval.int128.Int128Array;
+import eval.util.AkkaSerializer;
+import eval.util.OffsetBitSet;
+import eval.util.Slice;
 import scala.Tuple2;
 
 import java.io.*;
@@ -17,6 +17,9 @@ import java.util.Random;
 public final class Filters {
     private Filters() {}
 
+    /**
+     * @return a {@link scala.Tuple2} of filled filter and number of successful insertions
+     */
     public static Tuple2<FluentCvRFilter<Int128>, Integer> fill(
         FluentCvRFilter<Int128> filter,
         Int128Array data,
@@ -145,7 +148,17 @@ public final class Filters {
     }
 
     public static int getSerializedSize(CvRFilter<?, ?> filter) {
-        if (filter instanceof AkkaGSet<?> gset) {
+        if (filter instanceof FluentCvRFilter<?> fluent) {
+            CvRFilter<?, ?> inner;
+            try {
+                var field = fluent.getClass().getDeclaredField("filter");
+                field.setAccessible(true);
+                inner = (CvRFilter<?, ?>) field.get(fluent);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            return getSerializedSize(inner);
+        } else if (filter instanceof AkkaGSet<?> gset) {
             return AkkaSerializer.getInstance().gsetToProto(gset.getAkkaSet()).getSerializedSize();
         } else if (filter instanceof AkkaORSet<?> orset) {
             return AkkaSerializer.getInstance().orsetToProto(orset.getAkkaSet()).getSerializedSize();
@@ -165,7 +178,7 @@ public final class Filters {
     @Deprecated
     @SuppressWarnings("unchecked")
     public static <T> T deepcopy(T obj) {
-        T copy = null;
+        T copy;
         try {
             var bos = new ByteArrayOutputStream();
             var oos = new ObjectOutputStream(bos);

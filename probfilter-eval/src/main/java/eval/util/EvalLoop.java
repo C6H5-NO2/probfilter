@@ -40,7 +40,13 @@ public abstract class EvalLoop {
                 preVarStep(variable);
                 if (timed) {
                     int finalVar = variable;
-                    var result = Timed.measure(() -> varStep(finalVar));
+                    var result = Timed.measure(() -> {
+                        try {
+                            return varStep(finalVar);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
                     postVarStep(variable, result._1, result._2);
                 } else {
                     var result = varStep(variable);
@@ -55,7 +61,7 @@ public abstract class EvalLoop {
         }
     }
 
-    private String varStep(int variable) {
+    private String varStep(int variable) throws IOException {
         var records = preRepeatLoop(variable);
         for (int epoch = 0; epoch < repeat; ++epoch) {
             records = repeatStep(variable, epoch, records);
@@ -89,13 +95,13 @@ public abstract class EvalLoop {
             System.out.printf("finished in %.3f seconds%n", milliseconds / 1000.0);
     }
 
-    protected EvalRecord preRepeatLoop(int variable) {
+    protected EvalRecord preRepeatLoop(int variable) throws IOException {
         return new EvalRecord(headerFields);
     }
 
-    protected abstract EvalRecord repeatStep(int variable, int epoch, EvalRecord records);
+    protected abstract EvalRecord repeatStep(int variable, int epoch, EvalRecord records) throws IOException;
 
-    protected String postRepeatLoop(int variable, EvalRecord records) {
+    protected String postRepeatLoop(int variable, EvalRecord records) throws IOException {
         records = records.averaged();
         int length = headerFields.length;
         var format = String.join(",", Collections.nCopies(length, "%s"));
