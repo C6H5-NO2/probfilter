@@ -16,5 +16,21 @@ Besides, there are also two adapter classes for convenience.
 - `class FluentCvRFilter`: offers a fluent interface
 - `class ReplicatedFilter`: implements Akka's [ReplicatedData](https://doc.akka.io/docs/akka/current/typed/distributed-data.html#replicated-data-types)
 
-## Status
-🚧 This library is currently under active development. Features and code may change frequently, and the API is not yet stable.
+## Example
+```java
+int elem = 42;
+var filter1 = new ORCuckooFilter.Immutable<>(strategy, (short) 1).asFluent();
+var filter2 = new ORCuckooFilter.Immutable<>(strategy, (short) 2).asFluent();
+
+filter1 = filter1.add(elem);
+assert filter1.contains(elem);
+
+filter2 = filter2.merge(filter1);
+assert filter2.contains(elem);
+
+filter2 = filter2.remove(elem);
+assert !filter2.contains(elem);
+
+filter1 = filter1.merge(filter2);
+assert !filter1.contains(elem);
+```
