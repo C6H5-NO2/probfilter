@@ -1,7 +1,5 @@
 package com.c6h5no2.probfilter.crdt
 
-import com.c6h5no2.probfilter.hash.Funnel
-import com.c6h5no2.probfilter.hash.Funnels.IntFunnel
 import com.c6h5no2.probfilter.pdsa.cuckoo.CuckooStrategy.MaxIterationReachedException
 import org.scalatest.Assertions
 
@@ -13,12 +11,12 @@ trait CvRFilterTestOps {
 
   import com.c6h5no2.probfilter.crdt.CvRFilterTestOps._
 
-  def supplyFilter(capacity: Int, rid: Short, funnel: Funnel[Int]): FluentCvRFilter[Int]
+  def supplyFilter(capacity: Int, rid: Short): FluentCvRFilter[Int]
 
   def testContainAddedElem(): Unit = {
     val rng = new Random(seed)
     val data = Seq.fill(load)(rng.nextInt())
-    val empty = supplyFilter(capacity, 1, IntFunnel)
+    val empty = supplyFilter(capacity, 1)
     data.foreach(i => assert(!empty.contains(i)))
     val added = empty.incl(data)
     data.foreach(i => assert(added.contains(i)))
@@ -27,7 +25,7 @@ trait CvRFilterTestOps {
   def testNotContainRemovedElem(): Unit = {
     val rng = new Random(seed)
     val data = Seq.fill(load)(rng.nextInt())
-    val empty = supplyFilter(capacity, 1, IntFunnel)
+    val empty = supplyFilter(capacity, 1)
     val added = empty.incl(data)
     data.foreach(i => assert(added.contains(i)))
     val removed = added.excl(data)
@@ -38,7 +36,7 @@ trait CvRFilterTestOps {
   def testAbortAddWhenSaturated(): Unit = {
     val rng = new Random(seed)
     val data = Seq.fill(capacity)(rng.nextInt())
-    val empty = supplyFilter(capacity, 1, IntFunnel)
+    val empty = supplyFilter(capacity, 1)
     assertThrows[MaxIterationReachedException] {
       empty.incl(data)
     }
@@ -47,7 +45,7 @@ trait CvRFilterTestOps {
   def testNotAbortAdd(): Unit = {
     val rng = new Random(seed)
     val data = Seq.fill(capacity)(rng.nextInt())
-    val empty = supplyFilter(capacity, 1, IntFunnel)
+    val empty = supplyFilter(capacity, 1)
     val added = empty.incl(data)
     data.foreach(i => assert(added.contains(i)))
   }
@@ -61,8 +59,8 @@ trait CvRFilterTestOps {
     val rng = new Random(seed)
     val data1 = rng.nextInt()
     val data2 = data1 + 1
-    val empty1 = supplyFilter(capacity, 1, IntFunnel)
-    val empty2 = supplyFilter(capacity, 2, IntFunnel)
+    val empty1 = supplyFilter(capacity, 1)
+    val empty2 = supplyFilter(capacity, 2)
     val filter1 = empty1.add(data1)
     val filter2 = empty2
     assert(filter1.contains(data1))
@@ -87,8 +85,8 @@ trait CvRFilterTestOps {
     val rng = new Random(seed)
     val data1 = Seq.fill(load)(rng.nextInt())
     val data2 = Seq.fill(load)(rng.nextInt())
-    val empty1 = supplyFilter(capacity, 1, IntFunnel)
-    val empty2 = supplyFilter(capacity, 2, IntFunnel)
+    val empty1 = supplyFilter(capacity, 1)
+    val empty2 = supplyFilter(capacity, 2)
     val filter1 = empty1.incl(data1)
     val filter2 = empty2.incl(data2)
     val (filter1m2, filter2m1) = merge(filter1, filter2)
@@ -101,8 +99,8 @@ trait CvRFilterTestOps {
   def testNotContainObservedRemovedElem(): Unit = {
     val rng = new Random(seed)
     val data = rng.nextInt()
-    val empty1 = supplyFilter(capacity, 1, IntFunnel)
-    val empty2 = supplyFilter(capacity, 2, IntFunnel)
+    val empty1 = supplyFilter(capacity, 1)
+    val empty2 = supplyFilter(capacity, 2)
     val filter1 = empty1.add(data)
     val filter2 = empty2
     val (filter1m2, filter2m1) = merge(filter1, filter2)
@@ -120,8 +118,8 @@ trait CvRFilterTestOps {
   def testContainConcurrentlyAddedElem(): Unit = {
     val rng = new Random(seed)
     val data = rng.nextInt()
-    val empty1 = supplyFilter(capacity, 1, IntFunnel)
-    val empty2 = supplyFilter(capacity, 2, IntFunnel)
+    val empty1 = supplyFilter(capacity, 1)
+    val empty2 = supplyFilter(capacity, 2)
     val filter1 = empty1.incl(data)
     val filter2 = empty2
     val (filter1m2, filter2m1) = merge(filter1, filter2)

@@ -1,23 +1,12 @@
 package com.c6h5no2.probfilter.crdt
 
-import com.c6h5no2.probfilter.hash.Funnel
+import com.c6h5no2.probfilter.hash.Funnels.IntFunnel
 import com.c6h5no2.probfilter.pdsa.cuckoo.{CuckooEntryType, SimpleCuckooStrategy}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 
 final class ScGCuckooFilterTest extends AnyFlatSpec with TableDrivenPropertyChecks with CvRFilterTestOps {
-  private var mutable: Boolean = false
-  private var entryType: CuckooEntryType = CuckooEntryType.values().apply(0)
-
-  private val configs = Table.apply(
-    ("mutable", "entryType"),
-    (false, CuckooEntryType.SIMPLE_BYTE),
-    (false, CuckooEntryType.SIMPLE_SHORT),
-    (true, CuckooEntryType.SIMPLE_BYTE),
-    (true, CuckooEntryType.SIMPLE_SHORT),
-  )
-
   behavior of "ScGCuckooFilter"
 
   it should "contain added elements" in {
@@ -32,10 +21,16 @@ final class ScGCuckooFilterTest extends AnyFlatSpec with TableDrivenPropertyChec
     forall(testContainAddedElemAfterMerge())
   }
 
-  override def supplyFilter(capacity: Int, rid: Short, funnel: Funnel[Int]): FluentCvRFilter[Int] = {
-    val strategy = SimpleCuckooStrategy.apply(capacity >> 2, 2, 20, 7, entryType, funnel)
-    ScGCuckooFilter.apply(mutable, strategy, rid).asFluent()
-  }
+  private var mutable: Boolean = false
+  private var entryType: CuckooEntryType = CuckooEntryType.values().apply(0)
+
+  private val configs = Table.apply(
+    ("mutable", "entryType"),
+    (false, CuckooEntryType.SIMPLE_BYTE),
+    (false, CuckooEntryType.SIMPLE_SHORT),
+    (true, CuckooEntryType.SIMPLE_BYTE),
+    (true, CuckooEntryType.SIMPLE_SHORT),
+  )
 
   private def forall[U](testFn: => U): Unit = {
     forAll(configs) { (mutable, entryType) =>
@@ -43,5 +38,10 @@ final class ScGCuckooFilterTest extends AnyFlatSpec with TableDrivenPropertyChec
       this.entryType = entryType
       testFn
     }
+  }
+
+  override def supplyFilter(capacity: Int, rid: Short): FluentCvRFilter[Int] = {
+    val strategy = SimpleCuckooStrategy.apply(capacity >> 2, 2, 20, 7, entryType, IntFunnel)
+    ScGCuckooFilter.apply(mutable, strategy, rid).asFluent
   }
 }
