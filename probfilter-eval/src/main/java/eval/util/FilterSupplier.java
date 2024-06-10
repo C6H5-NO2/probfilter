@@ -1,10 +1,10 @@
 package eval.util;
 
+import com.c6h5no2.probfilter.crdt.FluentCvRFilter;
 import eval.int128.Int128;
-import probfilter.pdsa.Filter;
 
 
 @FunctionalInterface
 public interface FilterSupplier {
-    Filter<Int128> get(int capacity, short rid);
+    FluentCvRFilter<Int128> get(int capacity, short rid);
 }

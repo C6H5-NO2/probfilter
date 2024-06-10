@@ -5,17 +5,12 @@ import java.util.stream.IntStream;
 
 
 /**
- * A mutable bit set that always contains {@code false} ({@code 0}) until an offset.
+ * A mutable bit set that always contains {@code false} until an offset.
  */
 public final class OffsetBitSet {
     private final BitSet bitset;
     public final int offset;
-    private int activeBits;
-
-    @Deprecated
-    public OffsetBitSet(int capacity) {
-        this(capacity, 0);
-    }
+    private int activeBitsCache;
 
     /**
      * @param capacity the same value as {@code nbits} in {@link java.util.BitSet#BitSet(int)}
@@ -25,10 +20,10 @@ public final class OffsetBitSet {
         this(new BitSet(capacity - offset), offset, 0);
     }
 
-    private OffsetBitSet(BitSet bitset, int offset, int activeBits) {
+    private OffsetBitSet(BitSet bitset, int offset, int activeBitsCache) {
         this.bitset = bitset;
         this.offset = offset;
-        this.activeBits = activeBits;
+        this.activeBitsCache = activeBitsCache;
     }
 
     /**
@@ -36,10 +31,9 @@ public final class OffsetBitSet {
      * @see java.util.BitSet#cardinality()
      */
     public int cardinality() {
-        // return bitset.cardinality();
-        if (activeBits < 0)
-            activeBits = bitset.cardinality();
-        return activeBits;
+        if (activeBitsCache < 0)
+            activeBitsCache = bitset.cardinality();
+        return activeBitsCache;
     }
 
     /**
@@ -61,7 +55,7 @@ public final class OffsetBitSet {
      * @see java.util.BitSet#clear()
      */
     public OffsetBitSet clear() {
-        activeBits = 0;
+        activeBitsCache = 0;
         bitset.clear();
         return this;
     }
@@ -71,7 +65,7 @@ public final class OffsetBitSet {
      */
     public OffsetBitSet clear(int index) {
         if (get(index)) {
-            activeBits = cardinality() - 1;
+            activeBitsCache = cardinality() - 1;
             bitset.clear(index - offset);
         }
         return this;
@@ -82,7 +76,7 @@ public final class OffsetBitSet {
      */
     public OffsetBitSet set(int index) {
         if (!get(index)) {
-            activeBits = cardinality() + 1;
+            activeBitsCache = cardinality() + 1;
             bitset.set(index - offset);
         }
         return this;
@@ -93,7 +87,7 @@ public final class OffsetBitSet {
      */
     public OffsetBitSet set(int from, int until) {
         bitset.set(from - offset, until - offset);
-        activeBits = -1;
+        activeBitsCache = -1;
         return this;
     }
 
@@ -101,10 +95,11 @@ public final class OffsetBitSet {
      * @see java.util.BitSet#or(BitSet)
      */
     public OffsetBitSet or(OffsetBitSet that) {
-        if (this.offset != that.offset)
+        if (this.offset != that.offset) {
             throw new IllegalArgumentException();
+        }
         this.bitset.or(that.bitset);
-        activeBits = -1;
+        this.activeBitsCache = -1;
         return this;
     }
 
@@ -114,10 +109,11 @@ public final class OffsetBitSet {
      * @see java.util.BitSet#andNot(BitSet)
      */
     public OffsetBitSet andNot(OffsetBitSet that) {
-        if (this.offset != that.offset)
+        if (this.offset != that.offset) {
             throw new IllegalArgumentException();
+        }
         this.bitset.andNot(that.bitset);
-        activeBits = -1;
+        this.activeBitsCache = -1;
         return this;
     }
 
@@ -128,8 +124,11 @@ public final class OffsetBitSet {
         return bitset.stream().map(i -> offset + i);
     }
 
+    /**
+     * @return a new instance of {@link OffsetBitSet}
+     */
     public OffsetBitSet copy() {
         var bitset = (BitSet) this.bitset.clone();
-        return new OffsetBitSet(bitset, this.offset, this.activeBits);
+        return new OffsetBitSet(bitset, this.offset, this.activeBitsCache);
     }
 }

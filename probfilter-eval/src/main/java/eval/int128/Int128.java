@@ -15,6 +15,9 @@ public record Int128(long high, long low) implements Comparable<Int128> {
         return cmpHi == 0 ? Long.compareUnsigned(this.low, that.low) : cmpHi;
     }
 
+    /**
+     * @return big-endian representation
+     */
     public byte[] toBytes() {
         return Bytes.concat(Longs.toByteArray(high), Longs.toByteArray(low));
     }

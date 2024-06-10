@@ -5,8 +5,6 @@ import eval.int128.Int128Array;
 
 
 public final class Dataset {
-    private Dataset() {}
-
     // vvv configured vvv
     public static final int SEED = 2024;
     public static final int MAX_MAGNITUDE = 20;
@@ -21,6 +19,8 @@ public final class Dataset {
 
     private static Int128Array data = null;
 
+    private Dataset() {}
+
     /**
      * @apiNote NOT thread-safe
      */
@@ -32,8 +32,8 @@ public final class Dataset {
     }
 
     /**
-     * @apiNote Release the static reference in this class only.
-     * All other references shall also be set to {@code null} to make the data unreachable.
+     * @apiNote Release the static reference in this class only. All other references shall also be
+     * set to {@code null} to make the data unreachable. Then one can call {@code System.gc()}.
      */
     public static void release() {
         data = null;

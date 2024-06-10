@@ -1,12 +1,14 @@
 package eval.int128;
 
-import probfilter.hash.Funnel;
-import probfilter.hash.Sink;
+import com.c6h5no2.probfilter.hash.Funnel;
+import com.c6h5no2.probfilter.hash.Sink;
 
 
-public final class Int128Funnel implements Funnel<Int128> {
+public enum Int128Funnel implements Funnel<Int128> {
+    INSTANCE;
+
     @Override
-    public void funnel(Int128 from, Sink into) {
+    public void apply(Int128 from, Sink into) {
         into.putLong(from.high()).putLong(from.low());
     }
 }

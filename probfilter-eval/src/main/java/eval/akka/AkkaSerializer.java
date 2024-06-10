@@ -19,19 +19,6 @@ public final class AkkaSerializer extends ReplicatedDataSerializer {
         super(null);
     }
 
-    private static class Lazy {
-        private static final AkkaSerializer INSTANCE = create();
-    }
-
-    private static AkkaSerializer create() {
-        var unsafe = Unsafe.instance;
-        try {
-            return (AkkaSerializer) unsafe.allocateInstance(AkkaSerializer.class);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Override
     public ReplicatorMessages.OtherMessage otherMessageToProto(Object msg) {
         if (msg instanceof Int128 int128) {
@@ -47,5 +34,18 @@ public final class AkkaSerializer extends ReplicatedDataSerializer {
 
     public static ReplicatedDataSerializer getInstance() {
         return Lazy.INSTANCE;
+    }
+
+    private static AkkaSerializer apply() {
+        var unsafe = Unsafe.instance;
+        try {
+            return (AkkaSerializer) unsafe.allocateInstance(AkkaSerializer.class);
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static class Lazy {
+        private static final AkkaSerializer INSTANCE = apply();
     }
 }

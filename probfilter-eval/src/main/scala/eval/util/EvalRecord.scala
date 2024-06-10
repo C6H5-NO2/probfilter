@@ -1,36 +1,40 @@
 package eval.util
 
 
-final class EvalRecord private(private val record: Map[String, Seq[Number]]) {
+/** An immutable collection of evaluation records. */
+final class EvalRecord private(record: Map[String, Seq[Number]]) {
   def this(statistics: String*) = this(Map.apply(statistics.map((_, Seq.empty[Number])): _*))
 
   def this(statistics: Array[String]) = this(statistics: _*)
 
   /** Appends to `statistic` a newly observed `value`. */
-  def append(statistic: String, value: Number): EvalRecord =
+  def appended(statistic: String, value: Number): EvalRecord = {
     new EvalRecord(record.updated(statistic, record.apply(statistic).appended(value)))
+  }
 
   /** Sets `statistic` to `value`. */
-  def update(statistic: String, value: Number): EvalRecord = {
-    if (record.apply(statistic).length > 1)
+  def updated(statistic: String, value: Number): EvalRecord = {
+    if (record.apply(statistic).length > 1) {
       throw new IllegalArgumentException()
+    }
     new EvalRecord(record.updated(statistic, Seq.apply(value)))
   }
 
-  def average(): EvalRecord = {
+  def averaged: EvalRecord = {
     val length = record.valuesIterator.map(_.length).max
-    val newRecord = record.view.mapValues { seq =>
+    val newMap = record.view.mapValues { seq =>
       if (seq.isEmpty) {
         throw new IllegalArgumentException()
       } else if (seq.length == 1) {
         seq
       } else {
-        if (seq.length != length)
+        if (seq.length != length) {
           throw new IllegalArgumentException()
+        }
         Seq.apply[Number](seq.foldLeft(0.0)((sum, num) => sum + num.doubleValue()) / length)
       }
     }.toMap
-    new EvalRecord(newRecord)
+    new EvalRecord(newMap)
   }
 
   def get(statistic: String): Number = {

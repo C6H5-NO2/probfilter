@@ -11,9 +11,10 @@ public final class CachedRandomInt128 {
         var file = new File(pathname);
         if (file.exists())
             throw new RuntimeException();
-        var rnd = new RandomInt128(seed);
+        var rng = new RandomInt128Generator(seed);
+        // one for inserting, one for testing
         var capacity = (1 << magnitude) * 2 * repeat;
-        var array = rnd.distinct(capacity);
+        var array = rng.distinct(capacity);
         try {
             array.writeFile(file);
         } catch (IOException e) {

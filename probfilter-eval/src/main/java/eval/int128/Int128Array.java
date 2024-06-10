@@ -4,6 +4,9 @@ import java.io.*;
 import java.util.Arrays;
 
 
+/**
+ * A mutable compact array of {@link Int128}.
+ */
 public final class Int128Array implements Serializable {
     private long[] array;
 
@@ -31,16 +34,16 @@ public final class Int128Array implements Serializable {
         return Arrays.toString(array);
     }
 
-    public void write(DataOutput out) throws IOException {
-        int length = array.length;
+    private void write(DataOutput out) throws IOException {
+        int length = this.array.length;
         out.writeInt(length >>> 1);
         for (int i = 0; i < length; ++i)
-            out.writeLong(array[i]);
+            out.writeLong(this.array[i]);
     }
 
-    public void read(DataInput in) throws IOException {
+    private void read(DataInput in) throws IOException {
         int length = in.readInt() << 1;
-        var array = new long[length];
+        long[] array = new long[length];
         for (int i = 0; i < length; ++i)
             array[i] = in.readLong();
         this.array = array;
@@ -74,6 +77,6 @@ public final class Int128Array implements Serializable {
 
     @Serial
     private void readObjectNoData() throws ObjectStreamException {
-        array = new long[0];
+        this.array = new long[0];
     }
 }
