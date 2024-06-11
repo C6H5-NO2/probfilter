@@ -77,6 +77,11 @@ public final class FluentCvRFilter<E> implements CvRFilter<E, FluentCvRFilter<E>
         return copy(this.filter.merge(that.filter));
     }
 
+    @Override
+    public FluentCvRFilter<E> asFluent() {
+        return this;
+    }
+
     private FluentCvRFilter<E> copy(CvRFilter<E, ?> filter) {
         return new FluentCvRFilter<>(filter);
     }
