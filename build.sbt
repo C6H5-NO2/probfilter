@@ -1,8 +1,8 @@
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "2.13.14"
 
-val akkaVersion = "2.9.0"
+val akkaVersion = "2.9.3"
 val guavaVersion = "32.1.3-jre"
-val scalatestVersion = "3.2.17"
+val scalatestVersion = "3.2.18"
 
 lazy val commonSettings = Seq(
   version := "0.1.0-alpha",
