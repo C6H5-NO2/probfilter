@@ -2,39 +2,41 @@ package eval.fpp;
 
 import com.c6h5no2.probfilter.crdt.FluentCvRFilter;
 import eval.data.Dataset;
-import eval.int128.Int128;
-import eval.int128.Int128Array;
 import eval.filter.FilterSupplier;
 import eval.filter.Filters;
+import eval.int128.Int128;
+import eval.int128.Int128Array;
 import eval.util.Slice;
 import scala.Tuple2;
 
 
 public final class Distr2FppEvalLoop extends FppEvalLoop {
-    private final double splitRatio;
+    private final double distrRatio;
     private final FilterSupplier supplier;
 
-    public Distr2FppEvalLoop(Slice loadMagnitudeRange, int repeat, double splitRatio, FilterSupplier supplier) {
+    public Distr2FppEvalLoop(Slice loadMagnitudeRange, int repeat, double distrRatio, FilterSupplier supplier) {
         super(loadMagnitudeRange, repeat);
-        this.splitRatio = splitRatio;
+        this.distrRatio = distrRatio;
         this.supplier = supplier;
     }
 
     @Override
     protected void preVarStep(int variable) {
-        System.out.printf("load: distr2 %d (2^%d) %.2f-split%n", 1 << variable, variable, splitRatio);
+        System.out.printf("load: distr2 %d (2^%d) %.2f-split%n", 1 << variable, variable, distrRatio);
     }
 
     @Override
     protected Tuple2<FluentCvRFilter<Int128>, Integer>
     loadFilter(int capacity, Int128Array data, int load, int epoch) {
-        var sliceToAdd = Slice.fromLength(Dataset.LENGTH_OF_BATCH * epoch, load).split(splitRatio);
-        var sliceToAdd1 = sliceToAdd._1;
-        var sliceToAdd2 = sliceToAdd._2;
+        var slicesToAdd = Slice.fromLength(Dataset.LENGTH_OF_BATCH * epoch, load).split(distrRatio);
+        var sliceToAdd1 = slicesToAdd._1;
+        var sliceToAdd2 = slicesToAdd._2;
         var filter1 = supplier.get(capacity, (short) 1);
         var filter2 = supplier.get(capacity, (short) 2);
-        var result1 = Filters.fill(filter1, data, sliceToAdd1);
-        var result2 = Filters.fill(filter2, data, sliceToAdd2);
-        return new Tuple2<>(result1._1.merge(result2._1), result1._2 + result2._2);
+        var fillResult1 = Filters.fill(filter1, data, sliceToAdd1);
+        var fillResult2 = Filters.fill(filter2, data, sliceToAdd2);
+        filter1 = fillResult1._1;
+        filter2 = fillResult2._1;
+        return new Tuple2<>(filter1.merge(filter2), fillResult1._2 + fillResult2._2);
     }
 }

@@ -4,6 +4,7 @@ import com.c6h5no2.probfilter.crdt.*;
 import com.c6h5no2.probfilter.pdsa.bloom.SimpleBloomStrategy;
 import com.c6h5no2.probfilter.pdsa.cuckoo.CuckooEntryType;
 import com.c6h5no2.probfilter.pdsa.cuckoo.SimpleCuckooStrategy;
+import eval.int128.Int128;
 import eval.int128.Int128Funnel;
 
 
@@ -66,7 +67,11 @@ public enum FilterConfig {
     IMM_SCORCF("scorcf_bs4_f8_c4", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity >> 2, 4, 500, 8, CuckooEntryType.VERSIONED_LONG, Int128Funnel.INSTANCE);
         return ScORCuckooFilter.apply(false, strategy, rid, rid).asFluent();
-    });
+    }),
+
+    IMM_GSET("gset", (capacity, rid) -> new AkkaGSet<Int128>().asFluent()),
+
+    IMM_ORSET("orset", (capacity, rid) -> new AkkaORSet<Int128>(rid).asFluent());
 
     private final String _nameId;
     private final FilterSupplier _supplier;
