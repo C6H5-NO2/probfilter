@@ -1,0 +1,41 @@
+name: Verification with VeriFx
+
+on:
+  workflow_dispatch:
+    inputs:
+      z3_version:
+        required: true
+        type: string
+        default: '4.12.6'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    - name: setup jdk 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: setup z3
+      run: |
+        Z3_NAME=z3-${{ inputs.z3_version }}-x64-glibc-2.35
+        curl -s -S -L -O https://github.com/Z3Prover/z3/releases/download/z3-${{ inputs.z3_version }}/$Z3_NAME.zip
+        unzip -q $Z3_NAME.zip
+        mv $Z3_NAME/bin/libz3.so .
+        mv $Z3_NAME/bin/libz3java.so .
+        mkdir -p probfilter-verifx/lib
+        mv $Z3_NAME/bin/com.microsoft.z3.jar probfilter-verifx/lib
+        rm -r $Z3_NAME
+        rm $Z3_NAME.zip
+    - name: create link
+      run: |
+        mkdir -p src/main
+        ln -s $PWD/probfilter-verifx/src/main/verifx src/main/verifx
+    - name: verify
+      run: sbt clean probfilter-verifx/test
