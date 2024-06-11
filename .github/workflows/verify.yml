@@ -38,4 +38,4 @@ jobs:
         mkdir -p src/main
         ln -s $PWD/probfilter-verifx/src/main/verifx src/main/verifx
     - name: verify
-      run: sbt clean probfilter-verifx/test
+      run: sbt clean probfilter-verifx/test -Djava.library.path=$PWD
