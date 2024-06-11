@@ -30,7 +30,7 @@ sealed trait GCuckooFilter[E] extends CvRFilter[E, GCuckooFilter[E]] {
   }
 
   private def merge[T](that: GCuckooFilter[E], strategy: CuckooStrategy[E]): GCuckooFilter[E] = {
-    val newState = this.state.zipFold[T](that.state, this.state) { (newTTable, thisBucket, thatBucket, index) =>
+    val newState = this.state.zipFold[T](other = that.state)(this.state) { (newTTable, thisBucket, thatBucket, index) =>
       thatBucket.foldLeft(newTTable) { (newTTable, entry) =>
         if (thisBucket.contains(entry)) {
           newTTable
@@ -39,7 +39,7 @@ sealed trait GCuckooFilter[E] extends CvRFilter[E, GCuckooFilter[E]] {
           if (this.state.contains(altIndex, entry))
             newTTable
           else
-            newTTable.add(altIndex, entry)
+            newTTable.add(altIndex, entry) // this.state UNION (that.state DIFF this.state.displaced)
         }
       }
     }

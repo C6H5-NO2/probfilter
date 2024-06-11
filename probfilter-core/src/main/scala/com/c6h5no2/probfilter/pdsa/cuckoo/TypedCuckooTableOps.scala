@@ -88,7 +88,7 @@ private[cuckoo] trait TypedCuckooTableOps[T] {
    * @param op a [[scala.Function4]] whose parameters are: the current value, entries from `this`,
    * entries from `that`, and bucket index, and the return value is the next value
    */
-  def zipFold[B](that: TypedCuckooTable[T])(z: B)(op: (B, Array[T], Array[T], Int) => B): B = {
+  def zipFold[B](that: TypedCuckooTable[T])(z: B)(op: (B, Array[T], Array[T], Integer) => B): B = {
     var result = z
     var index = 0
     val max = math.max(this.numBuckets, that.numBuckets)

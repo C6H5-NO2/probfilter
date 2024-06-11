@@ -19,6 +19,7 @@ sealed trait ScORCuckooFilter[E] extends CvRFilter[E, ScORCuckooFilter[E]] {
   @tailrec
   override final def add(elem: E): ScORCuckooFilter[E] = {
     val expanded = state.expand()
+    // lazily find the last sub-filter where `elem` can be successfully added
     val res =
       expanded
         .reverseIterator
@@ -48,6 +49,7 @@ sealed trait ScORCuckooFilter[E] extends CvRFilter[E, ScORCuckooFilter[E]] {
     if (indexes.isEmpty) {
       this
     } else {
+      // remove from a random sub-filter
       val rng = rngCopy
       val index = indexes.apply(rng.nextInt(indexes.length))
       val updated = state.update(index, _.remove(elem))

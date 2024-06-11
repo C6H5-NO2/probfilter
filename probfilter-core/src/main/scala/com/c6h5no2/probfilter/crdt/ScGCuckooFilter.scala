@@ -23,6 +23,7 @@ sealed trait ScGCuckooFilter[E] extends CvRFilter[E, ScGCuckooFilter[E]] {
       val expanded = state.expand()
       val last = expanded.last
       if (last.size < last.capacity) {
+        // try add to last
         val res = last.tryAdd(elem)
         if (res.isSuccess) {
           val updated = expanded.setLast(res.get)

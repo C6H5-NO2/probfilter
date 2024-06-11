@@ -172,9 +172,12 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
 
   /**
    * @note `op` is applied iteratively from left to right, so please be mindful of the order of reads/writes.
-   * @see [[TypedCuckooTableOps.zipFold]]
+   * @note On Scala side, the overloads of this function should always be called with named argument. On Java
+   *       side there is no such problem.
+   * @see [[TypedCuckooTableOps.zipFold]], [[CuckooFilter.ZipFoldOp]]
    */
-  final def zipFold[T](that: CuckooFilter[E], z: TypedCuckooTable[T])
+  final def zipFold[T](that: CuckooFilter[E])
+                      (z: TypedCuckooTable[T])
                       (op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
     val thisTTable = this.table.typed[T]
     val thatTTable = that.table.typed[T]
@@ -184,13 +187,14 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
   }
 
   /** [[CuckooFilter.zipFold]] with starting value equal to `z.table.typed[T]` */
-  final def zipFold[T](that: CuckooFilter[E], z: CuckooFilter[E])
+  final def zipFold[T](other: CuckooFilter[E])
+                      (z: CuckooFilter[E])
                       (op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
-    zipFold(that, z.table.typed[T])(op)
+    zipFold(that = other)(z.table.typed[T])(op)
   }
 
   /** [[CuckooFilter.zipFold]] with starting value being empty */
-  def zipFold[T](that: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E]
+  def zipFold[T](zip: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E]
 
   @deprecated("not very effective")
   final def rebalance(repeat: Int): CuckooFilter[E] = {
@@ -259,8 +263,8 @@ object CuckooFilter {
 
     override protected def rollback[T](context: InsertContext[T], pair: CuckooStrategy.Pair, entry: T): Unit = {}
 
-    override def zipFold[T](that: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
-      zipFold(that, CuckooFilter.Immutable.emptyTable(strategy).typed[T])(op)
+    override def zipFold[T](zip: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
+      zipFold(that = zip)(CuckooFilter.Immutable.emptyTable(strategy).typed[T])(op)
     }
 
     override protected def rngCopy: RandomIntGenerator = rng.copy()
@@ -285,8 +289,8 @@ object CuckooFilter {
     def this(strategy: CuckooStrategy[E], seed: Int) =
       this(CuckooFilter.Mutable.emptyTable(strategy), strategy, new SimpleLCG(seed))
 
-    override def zipFold[T](that: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
-      zipFold(that, CuckooFilter.Mutable.emptyTable(strategy).typed[T])(op)
+    override def zipFold[T](zip: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
+      zipFold(that = zip)(CuckooFilter.Mutable.emptyTable(strategy).typed[T])(op)
     }
 
     override protected def rngCopy: RandomIntGenerator = rng.copy()
@@ -330,5 +334,10 @@ object CuckooFilter {
       new InsertContext[T](this.ttable, this.rng, this.hist, -1)
   }
 
-  private final type ZipFoldOp[T] = (TypedCuckooTable[T], Array[T], Array[T], Int) => TypedCuckooTable[T]
+  /**
+   * @note The two middle parameters may get type hinted as array of boxed primitives on Java side. They
+   *       are not. They are arrays of primitives. The last param could be declared as [[scala.Int]], but
+   *       it will become [[java.lang.Integer]] at runtime anyway.
+   */
+  private final type ZipFoldOp[T] = (TypedCuckooTable[T], Array[T], Array[T], Integer) => TypedCuckooTable[T]
 }

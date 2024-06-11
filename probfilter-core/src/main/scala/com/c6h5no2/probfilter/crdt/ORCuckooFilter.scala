@@ -50,17 +50,17 @@ sealed trait ORCuckooFilter[E] extends CvRFilter[E, ORCuckooFilter[E]] {
     strategy: CuckooStrategy[E],
     entryParser: T => ORCuckooFilter.VersionedEntry,
   ): ORCuckooFilter[E] = {
-    val newState = this.state.zipFold[T](that.state) { (newTTable, thisBucket, thatBucket, index) =>
+    val newState = this.state.zipFold[T](zip = that.state) { (newTTable, thisBucket, thatBucket, index) =>
       val s124 = thisBucket.filter { entry =>
         if (thatBucket.contains(entry)) {
-          true // S1: IN (this.state INTERSECT that.state)
+          true // S1: e IN (this.state INTERSECT that.state)
         } else {
           val ce = entryParser.apply(entry)
           if (!that.hist.observes(ce.replicaId, ce.timestamp)) {
-            true // S2: IN (this.state DIFF that.state) AND NOT IN that.hist
+            true // S2: e IN (this.state DIFF that.state) AND NOT IN that.hist
           } else {
             val altIndex = strategy.altIndexOf(index, ce.fingerprint)
-            that.state.contains(altIndex, entry) // S4: IN this.state AND (displaced() IN that.state)
+            that.state.contains(altIndex, entry) // S4: (e IN this.state) AND (e.displaced IN that.state)
           }
         }
       }
@@ -68,7 +68,7 @@ sealed trait ORCuckooFilter[E] extends CvRFilter[E, ORCuckooFilter[E]] {
       val s3 = thatBucket.filter { entry =>
         if (!thisBucket.contains(entry)) {
           val ce = entryParser.apply(entry)
-          // S3: IN (that.state DIFF this.state) AND NOT IN this.hist
+          // S3: e IN (that.state DIFF this.state) AND NOT IN this.hist
           !this.hist.observes(ce.replicaId, ce.timestamp)
         } else {
           false
