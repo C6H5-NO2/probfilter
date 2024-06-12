@@ -3,28 +3,43 @@ ThisBuild / scalaVersion := "2.13.14"
 val akkaVersion = "2.9.3"
 val guavaVersion = "32.1.3-jre"
 val scalatestVersion = "3.2.18"
+val verifxVersion = "1.0.2"
 
-lazy val commonSettings = Seq(
-  version := "0.1.0-alpha",
+val akkaActorID = "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion
+val akkaClusterID = "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+val akkaActorTestkitID = "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion
+val guavaID = "com.google.guava" % "guava" % guavaVersion
+val scalatestID = "org.scalatest" %% "scalatest" % scalatestVersion
+val verifxID = "org.verifx" %% "verifx" % verifxVersion
+
+val akkaResolver = Seq(resolvers += ("Akka library repository" at "https://repo.akka.io/maven"))
+
+val sharedSettings = Seq(
+  version := "0.1.1-SNAPSHOT",
+  versionScheme := Some("semver-spec"),
+  organization := "com.c6h5no2",
+  libraryDependencies ++= Seq(
+    scalatestID % Test
+  ),
+  publish / skip := true,
+  pomIncludeRepository := { _ => false },
 )
 
-lazy val commonAkkaSettings = Seq(
-  resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
-)
-
-lazy val root = Project("probfilter", file(".")).aggregate(
+lazy val root = Project("probfilter", file(".")).settings(
+  sharedSettings
+).aggregate(
   core,
-  verifx,
   akka,
   eval,
-  sample
+  sample,
+  verifx
 )
 
-lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
-  commonSettings,
+lazy val core = Project("probfilter-core", file("probfilter-core")).enablePlugins(
+).settings(
+  sharedSettings,
   libraryDependencies ++= Seq(
-    "com.google.guava" % "guava" % guavaVersion,
-    "org.scalatest" %% "scalatest" % scalatestVersion % Test
+    guavaID,
   ),
   assemblyShadeRules ++= Seq(
     ShadeRule.rename("com.google.**" -> "probfilter.shaded.@0").inAll
@@ -36,42 +51,46 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).settings(
   //     val oldStrategy = (ThisBuild / assemblyMergeStrategy).value
   //     oldStrategy(x)
   // },
-  // assembly / assemblyOption ~= {_.withIncludeScala(false)}
-)
-
-lazy val verifx = Project("probfilter-verifx", file("probfilter-verifx")).settings(
-  commonSettings,
-  libraryDependencies ++= Seq(
-    "org.verifx" %% "verifx" % "1.0.2",
-    "org.scalatest" %% "scalatest" % scalatestVersion % Test
-  ),
-  Compile / unmanagedJars ++= Seq(file("probfilter-verifx/lib/com.microsoft.z3.jar"))
+  // assembly / assemblyOption ~= {_.withIncludeScala(false)},
+  publish / skip := false,
+  publishMavenStyle := true,
 )
 
 lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(
-  commonSettings,
-  commonAkkaSettings,
+  sharedSettings,
+  akkaResolver,
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion % Provided,
-    "org.scalatest" %% "scalatest" % scalatestVersion % Test,
-    "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test
-  )
+    akkaClusterID % Provided,
+    akkaActorTestkitID % Test
+  ),
+  publish / skip := true, // todo
+  publishMavenStyle := true,
 )
 
 lazy val eval = Project("probfilter-eval", file("probfilter-eval")).dependsOn(akka).settings(
-  commonSettings,
-  commonAkkaSettings,
+  sharedSettings,
+  akkaResolver,
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+    akkaActorID,
+    akkaClusterID
   )
 )
 
 lazy val sample = Project("probfilter-sample", file("probfilter-sample")).dependsOn(akka).settings(
-  commonSettings,
-  commonAkkaSettings,
+  sharedSettings,
+  akkaResolver,
   libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-    "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion
+    akkaActorID,
+    akkaClusterID
+  )
+)
+
+lazy val verifx = Project("probfilter-verifx", file("probfilter-verifx")).settings(
+  sharedSettings,
+  libraryDependencies ++= Seq(
+    verifxID
+  ),
+  Compile / unmanagedJars ++= Seq(
+    file("probfilter-verifx/lib/com.microsoft.z3.jar")
   )
 )
