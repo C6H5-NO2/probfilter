@@ -43,7 +43,7 @@ public interface Filter<E, T> extends Serializable {
     /**
      * @throws java.lang.RuntimeException if that exception is not caught
      * @apiNote This function (is expected to) catch only exceptions due to the properties of this filter.
-     * @implNote The default implementation catches all {@link scala.util.control.NonFatal$ NonFatal} exceptions
+     * @implNote The default implementation catches all {@link scala.util.control.NonFatal NonFatal} exceptions
      * except for {@link java.lang.ClassCastException} and {@link scala.MatchError}; override if necessary.
      * @see Filter#add(E)
      */

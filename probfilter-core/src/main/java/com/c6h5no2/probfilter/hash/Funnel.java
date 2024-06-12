@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * A funnel that unpacks an object as primitive values.
  *
- * @see Funnels$ Funnels
+ * @see Funnels
  */
 @FunctionalInterface
 public interface Funnel<T> extends Serializable {

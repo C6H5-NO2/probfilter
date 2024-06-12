@@ -9,7 +9,7 @@ import scala.reflect.ClassTag
 private[cuckoo] trait TypedCuckooTableOps[T] {
   // assigning self-type will trigger cyclic reference
 
-  /** @return primitive storage type of entries (e.g. [[scala.reflect.ClassTag$.Long]]) */
+  /** @return primitive storage type of entries (e.g. [[scala.reflect.ClassTag.Long]]) */
   def storageType: ClassTag[T]
 
   /** @return number of buckets in the whole table */

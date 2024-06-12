@@ -186,14 +186,14 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
     copy(newTTable, rngCopy)
   }
 
-  /** [[CuckooFilter.zipFold]] with starting value equal to `z.table.typed[T]` */
+  /** [[CuckooFilter.zipFold[T](that* CuckooFilter.zipFold]] with starting value equal to `z.table.typed[T]` */
   final def zipFold[T](other: CuckooFilter[E])
                       (z: CuckooFilter[E])
                       (op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E] = {
     zipFold(that = other)(z.table.typed[T])(op)
   }
 
-  /** [[CuckooFilter.zipFold]] with starting value being empty */
+  /** [[CuckooFilter.zipFold[T](that* CuckooFilter.zipFold]] with starting value being empty */
   def zipFold[T](zip: CuckooFilter[E])(op: CuckooFilter.ZipFoldOp[T]): CuckooFilter[E]
 
   @deprecated("not very effective")
@@ -339,5 +339,5 @@ object CuckooFilter {
    *       are not. They are arrays of primitives. The last param could be declared as [[scala.Int]], but
    *       it will become [[java.lang.Integer]] at runtime anyway.
    */
-  private final type ZipFoldOp[T] = (TypedCuckooTable[T], Array[T], Array[T], Integer) => TypedCuckooTable[T]
+  final type ZipFoldOp[T] = (TypedCuckooTable[T], Array[T], Array[T], Integer) => TypedCuckooTable[T]
 }
