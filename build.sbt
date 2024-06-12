@@ -63,8 +63,11 @@ lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(co
     akkaClusterID % Provided,
     akkaActorTestkitID % Test
   ),
-  publish / skip := true, // todo
+  publish / skip := false,
   publishMavenStyle := true,
+  // `scaladoc` has problem compiling the code. Use `javadoc` only.
+  // Perhaps in the future we can have `javadoc` for Java and `scaladoc` for Scala with interlinking.
+  Compile / doc / sources := (Compile / doc / sources).value.filter(_.name.endsWith(".java"))
 )
 
 lazy val eval = Project("probfilter-eval", file("probfilter-eval")).dependsOn(akka).settings(
