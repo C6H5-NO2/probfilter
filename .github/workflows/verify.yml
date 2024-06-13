@@ -40,7 +40,7 @@ jobs:
     - name: verify
       run: |
         sbt clean
-        TEST_NAMES=$(sbt show probfilter-verifx/definedTestNames | grep -E -o '(\S+)$')
+        TEST_NAMES=$(sbt show probfilter-verifx/definedTestNames | grep -E -o '(\S+)$' | sort)
         for TEST_NAME in $TEST_NAMES; do
           sleep 1.5s
           sbt probfilter-verifx/testOnly $TEST_NAME -Djava.library.path=$PWD
