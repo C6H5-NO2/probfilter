@@ -2,7 +2,6 @@ package eval.mem;
 
 import eval.data.Dataset;
 import eval.filter.FilterConfig;
-import eval.util.EvalLoop;
 
 import java.util.List;
 
@@ -22,27 +21,27 @@ public final class MemEval {
     }
 
     public void evalAll(boolean removable) {
-        EvalLoop loop = new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_100, config.supplier());
-        loop.eval(String.format("results/mem/%s_add1.00_distr1.00.csv", config.nameId()));
+        new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_100, config.supplier())
+            .eval(String.format("results/mem/%s_add1.00_distr1.00.csv", config.nameId()));
 
-        loop = new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_100, DISTR_RATIO_50, config.supplier());
-        loop.eval(String.format("results/mem/%s_add1.00_distr0.50.csv", config.nameId()));
+        new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_100, DISTR_RATIO_50, config.supplier())
+            .eval(String.format("results/mem/%s_add1.00_distr0.50.csv", config.nameId()));
 
         if (!removable) {
             return;
         }
 
-        new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, config.supplier());
-        loop.eval(String.format("results/mem/%s_add0.80_distr1.00.csv", config.nameId()));
+        new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, config.supplier())
+            .eval(String.format("results/mem/%s_add0.80_distr1.00.csv", config.nameId()));
 
-        loop = new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, DISTR_RATIO_50, config.supplier());
-        loop.eval(String.format("results/mem/%s_add0.80_distr0.50.csv", config.nameId()));
+        new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_80, DISTR_RATIO_50, config.supplier())
+            .eval(String.format("results/mem/%s_add0.80_distr0.50.csv", config.nameId()));
 
-        new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, config.supplier());
-        loop.eval(String.format("results/mem/%s_add0.51_distr1.00.csv", config.nameId()));
+        new LocalMemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, config.supplier())
+            .eval(String.format("results/mem/%s_add0.51_distr1.00.csv", config.nameId()));
 
-        loop = new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, DISTR_RATIO_50, config.supplier());
-        loop.eval(String.format("results/mem/%s_add0.51_distr0.50.csv", config.nameId()));
+        new Distr2MemEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_51, DISTR_RATIO_50, config.supplier())
+            .eval(String.format("results/mem/%s_add0.51_distr0.50.csv", config.nameId()));
     }
 
     public static void main(String[] args) {
@@ -54,7 +53,9 @@ public final class MemEval {
             FilterConfig.IMM_GSET
         );
         for (int i = 0; i < configs.size(); ++i) {
+            var config = configs.get(i);
             boolean removable = i < 2;
+            System.out.println("using config " + config.nameId());
             new MemEval(configs.get(i)).evalAll(removable);
         }
     }

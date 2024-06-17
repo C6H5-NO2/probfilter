@@ -6,19 +6,19 @@ import com.c6h5no2.probfilter.util.Immutable;
 
 
 public final class AkkaGSet<E> implements CvRFilter<E, AkkaGSet<E>>, Immutable {
-    private final GSet<E> set;
+    private final GSet<E> state;
 
     public AkkaGSet() {
-        this.set = GSet.create();
+        this.state = GSet.<E>create();
     }
 
-    private AkkaGSet(GSet<E> set) {
-        this.set = set;
+    private AkkaGSet(GSet<E> state) {
+        this.state = state;
     }
 
     @Override
     public int size() {
-        return set.size();
+        return state.size();
     }
 
     @Override
@@ -33,26 +33,26 @@ public final class AkkaGSet<E> implements CvRFilter<E, AkkaGSet<E>>, Immutable {
 
     @Override
     public boolean contains(E elem) {
-        return set.contains(elem);
+        return state.contains(elem);
     }
 
     @Override
     public AkkaGSet<E> add(E elem) {
-        var newSet = set.add(elem).resetDelta().clearAncestor();
-        return copy(newSet);
+        var newState = (GSet<E>) state.add(elem).resetDelta().clearAncestor();
+        return copy(newState);
     }
 
     @Override
     public AkkaGSet<E> merge(AkkaGSet<E> that) {
-        var newSet = this.set.merge(that.set).resetDelta().clearAncestor();
-        return copy(newSet);
+        var newState = (GSet<E>) this.state.merge(that.state).resetDelta().clearAncestor();
+        return copy(newState);
     }
 
     public GSet<E> getAkkaSet() {
-        return set;
+        return state;
     }
 
-    private AkkaGSet<E> copy(GSet<E> set) {
-        return new AkkaGSet<>(set);
+    private AkkaGSet<E> copy(GSet<E> state) {
+        return new AkkaGSet<>(state);
     }
 }

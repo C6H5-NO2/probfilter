@@ -10,21 +10,21 @@ import com.c6h5no2.probfilter.util.Immutable;
 
 public final class AkkaORSet<E> implements CvRFilter<E, AkkaORSet<E>>, Immutable {
     private final SelfUniqueAddress address;
-    private final ORSet<E> set;
+    private final ORSet<E> state;
 
     public AkkaORSet(short rid) {
         this.address = new SelfUniqueAddress(new UniqueAddress(new Address("", "", "", 0), (long) rid));
-        this.set = ORSet.create();
+        this.state = ORSet.<E>create();
     }
 
-    private AkkaORSet(SelfUniqueAddress address, ORSet<E> set) {
+    private AkkaORSet(SelfUniqueAddress address, ORSet<E> state) {
         this.address = address;
-        this.set = set;
+        this.state = state;
     }
 
     @Override
     public int size() {
-        return set.size();
+        return state.size();
     }
 
     @Override
@@ -39,32 +39,32 @@ public final class AkkaORSet<E> implements CvRFilter<E, AkkaORSet<E>>, Immutable
 
     @Override
     public boolean contains(E elem) {
-        return set.contains(elem);
+        return state.contains(elem);
     }
 
     @Override
     public AkkaORSet<E> add(E elem) {
-        var newSet = set.add(address, elem).resetDelta().clearAncestor();
-        return copy(newSet);
+        var newState = (ORSet<E>) state.add(address, elem).resetDelta().clearAncestor();
+        return copy(newState);
     }
 
     @Override
     public AkkaORSet<E> remove(E elem) {
-        var newSet = set.remove(address, elem).resetDelta().clearAncestor();
-        return copy(newSet);
+        var newState = (ORSet<E>) state.remove(address, elem).resetDelta().clearAncestor();
+        return copy(newState);
     }
 
     @Override
     public AkkaORSet<E> merge(AkkaORSet<E> that) {
-        var newSet = this.set.merge(that.set).resetDelta().clearAncestor();
-        return copy(newSet);
+        var newState = (ORSet<E>) this.state.merge(that.state).resetDelta().clearAncestor();
+        return copy(newState);
     }
 
     public ORSet<E> getAkkaSet() {
-        return set;
+        return state;
     }
 
-    private AkkaORSet<E> copy(ORSet<E> set) {
-        return new AkkaORSet<>(this.address, set);
+    private AkkaORSet<E> copy(ORSet<E> state) {
+        return new AkkaORSet<>(this.address, state);
     }
 }

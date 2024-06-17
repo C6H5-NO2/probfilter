@@ -30,16 +30,16 @@ public final class Distr2MemEvalLoop extends MemEvalLoop {
 
     @Override
     protected void preVarLoop() throws IOException {
-        super.preVarLoop();
         System.out.printf("load: distr2 %d (2^%d) %.2f-add %.2f-split", 1 << loadMagnitude, loadMagnitude, addRatio, distrRatio);
         if (isAddOnly()) {
             System.out.print(" [+]");
         }
         System.out.println();
+        super.preVarLoop();
     }
 
     @Override
-    protected void preVarStep(int variable) throws IOException {
+    protected void preVarStep(int variable) {
         System.out.printf("epoch %d%n", variable);
     }
 
