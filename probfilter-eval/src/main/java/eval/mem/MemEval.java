@@ -53,9 +53,8 @@ public final class MemEval {
             FilterConfig.IMM_GSET
         );
         for (int i = 0; i < configs.size(); ++i) {
-            var config = configs.get(i);
             boolean removable = i < 2;
-            System.out.println("using config " + config.nameId());
+            System.out.println("using config " + configs.get(i).nameId());
             new MemEval(configs.get(i)).evalAll(removable);
         }
     }
