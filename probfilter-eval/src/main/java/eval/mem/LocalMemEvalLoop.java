@@ -45,13 +45,13 @@ public final class LocalMemEvalLoop extends MemEvalLoop {
     protected FluentCvRFilter<Int128> loadFilter(int capacity, Int128Array data, int load, int epoch) {
         var slices = Slice.fromLength(Dataset.LENGTH_OF_BATCH * epoch, load).split(addRatio);
         var sliceToAdd = slices._1;
-        var sizeToRmv = slices._2.length();
         var filter = supplier.get(capacity, (short) 1);
         var fillResult = Filters.fill(filter, data, sliceToAdd);
         filter = fillResult._1;
         if (isAddOnly()) {
             return filter;
         } else {
+            var sizeToRmv = slices._2.length();
             var rng = new Random(Dataset.SEED + 1 + epoch);
             var sliceInserted = Slice.fromLength(sliceToAdd.from(), fillResult._2);
             return Filters.drop(filter, data, sizeToRmv, rng, sliceInserted);

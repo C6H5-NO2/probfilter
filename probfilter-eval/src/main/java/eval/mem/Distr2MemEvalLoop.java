@@ -30,7 +30,13 @@ public final class Distr2MemEvalLoop extends MemEvalLoop {
 
     @Override
     protected void preVarLoop() throws IOException {
-        System.out.printf("load: distr2 %d (2^%d) %.2f-add %.2f-split", 1 << loadMagnitude, loadMagnitude, addRatio, distrRatio);
+        System.out.printf(
+            "load: distr2 %d (2^%d) %.2f-add %.2f-split",
+            1 << loadMagnitude,
+            loadMagnitude,
+            addRatio,
+            distrRatio
+        );
         if (isAddOnly()) {
             System.out.print(" [+]");
         }
@@ -51,8 +57,6 @@ public final class Distr2MemEvalLoop extends MemEvalLoop {
         var slicesToRmv = slices._2;
         var sliceToAdd1 = slicesToAdd.split(distrRatio)._1;
         var sliceToAdd2 = slicesToAdd.split(distrRatio)._2;
-        var sizeToRmv1 = slicesToRmv.split(distrRatio)._1.length();
-        var sizeToRmv2 = slicesToRmv.split(distrRatio)._2.length();
 
         var filter1 = supplier.get(capacity, (short) 1);
         var filter2 = supplier.get(capacity, (short) 2);
@@ -64,9 +68,11 @@ public final class Distr2MemEvalLoop extends MemEvalLoop {
         if (isAddOnly()) {
             return filter1.merge(filter2);
         } else {
-            filter1 = filter1.merge(filter2);
             // it works given merge is correctly implemented to yield LUB
+            filter1 = filter1.merge(filter2);
             filter2 = filter2.merge(filter1);
+            var sizeToRmv1 = slicesToRmv.split(distrRatio)._1.length();
+            var sizeToRmv2 = slicesToRmv.split(distrRatio)._2.length();
             var rng1 = new Random(Dataset.SEED + 1 + epoch);
             var rng2 = new Random(Dataset.SEED - 1 - epoch);
             var sliceInserted1 = Slice.fromLength(sliceToAdd1.from(), fillResult1._2);
