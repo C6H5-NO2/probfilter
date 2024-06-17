@@ -2,7 +2,6 @@ package eval.lat;
 
 import eval.data.Dataset;
 import eval.filter.FilterConfig;
-import eval.util.EvalLoop;
 import eval.util.Slice;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public final class LatEval {
     private static final double ADD_RATIO_100 = 1.00;
     private static final double ADD_RATIO_80 = 0.80;
     private static final double ADD_RATIO_51 = 0.51;
-    private static final Slice SYNC_FREQ_MAGNITUDE_RANGE = Slice.fromTo(0, 6);
+    private static final Slice SYNC_FREQ_MAGNITUDE_RANGE = Slice.fromTo(3, 6);
 
     private final FilterConfig config;
 
@@ -23,18 +22,18 @@ public final class LatEval {
     }
 
     public void evalAll(boolean removable) {
-        EvalLoop loop = new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_100, config.supplier());
-        loop.eval(String.format("results/lat/%s_add1.00.csv", config.nameId()));
+        new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_100, config.supplier())
+            .eval(String.format("results/lat/%s_add1.00.csv", config.nameId()), true);
 
         if (!removable) {
             return;
         }
 
-        loop = new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_80, config.supplier());
-        loop.eval(String.format("results/lat/%s_add0.80.csv", config.nameId()));
+        new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_80, config.supplier())
+            .eval(String.format("results/lat/%s_add0.80.csv", config.nameId()), true);
 
-        loop = new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_51, config.supplier());
-        loop.eval(String.format("results/lat/%s_add0.51.csv", config.nameId()));
+        new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_51, config.supplier())
+            .eval(String.format("results/lat/%s_add0.51.csv", config.nameId()), true);
     }
 
     public static void main(String[] args) {
@@ -44,6 +43,7 @@ public final class LatEval {
         );
         for (int i = 0; i < configs.size(); ++i) {
             boolean removable = i < 1;
+            System.out.println("using config " + configs.get(i).nameId());
             new LatEval(configs.get(i)).evalAll(removable);
         }
     }

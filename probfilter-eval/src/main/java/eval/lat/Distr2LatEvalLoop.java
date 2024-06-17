@@ -65,11 +65,11 @@ public final class Distr2LatEvalLoop extends LatEvalLoop {
 
         var rng = new Random(epoch);
         for (int i = 0; i < load; ++i) {
-            if (isAddOnly() && filter1.isFull() && filter2.isFull()) {
+            if (isAddOnly() && !filter1.canAdd() && !filter2.canAdd()) {
                 break;
             }
             if (rng.nextDouble() < distrRatio) {
-                if (isAddOnly() && filter1.isFull()) {
+                if (isAddOnly() && !filter1.canAdd()) {
                     continue;
                 }
                 filter1.step();
@@ -77,7 +77,7 @@ public final class Distr2LatEvalLoop extends LatEvalLoop {
                     filter1.merge(filter2);
                 }
             } else {
-                if (isAddOnly() && filter2.isFull()) {
+                if (isAddOnly() && !filter2.canAdd()) {
                     continue;
                 }
                 filter2.step();

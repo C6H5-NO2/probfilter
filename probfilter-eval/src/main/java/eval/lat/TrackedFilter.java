@@ -48,41 +48,47 @@ public final class TrackedFilter implements Mutable {
     }
 
     public TrackedFilter step() {
-        if (rng.nextDouble() < addRatio || contained.cardinality() == 0) {
-            // add
-            if (full) {
-                throw new RuntimeException();
-            }
-            if (indexToAdd > sliceToAdd.until()) {
-                throw new RuntimeException();
-            }
-            var elem = data.get(indexToAdd);
-            var result = filter.tryAdd(elem);
-            if (result.isSuccess()) {
-                filter = result.get();
-                contained.set(indexToAdd);
-                concurAdded.set(indexToAdd);
-                concurRemoved.clear(indexToAdd);
-                indexToAdd++;
-            } else {
-                full = true;
-            }
+        if (rng.nextDouble() < addRatio && canAdd()) {
+            return add();
         } else {
-            // remove
-            int indexInStream = rng.nextInt(contained.cardinality());
-            // noinspection OptionalGetWithoutIsPresent
-            int indexToRmv = contained.stream().skip(indexInStream).findFirst().getAsInt();
-            var elem = data.get(indexToRmv);
-            if (!filter.contains(elem)) {
-                // false negative
-                numFalseNegatives++;
-            }
-            filter = filter.remove(elem);
-            contained.clear(indexToRmv);
-            concurAdded.clear(indexToRmv);
-            concurRemoved.set(indexToRmv);
+            return remove();
         }
-        numAppliedOps++;
+    }
+
+    private TrackedFilter add() {
+        var elem = data.get(indexToAdd);
+        var result = filter.tryAdd(elem);
+        if (result.isSuccess()) {
+            filter = result.get();
+            contained.set(indexToAdd);
+            concurAdded.set(indexToAdd);
+            concurRemoved.clear(indexToAdd);
+            indexToAdd += 1;
+        } else {
+            full = true;
+        }
+        numAppliedOps += 1;
+        return this;
+    }
+
+    private TrackedFilter remove() {
+        if (contained.cardinality() == 0) {
+            return this;
+        }
+        int indexInStream = rng.nextInt(contained.cardinality());
+        // noinspection OptionalGetWithoutIsPresent
+        int indexToRmv = contained.stream().skip(indexInStream).findFirst().getAsInt();
+        var elem = data.get(indexToRmv);
+        if (!filter.contains(elem)) {
+            // false negative
+            numFalseNegatives++;
+        }
+        filter = filter.remove(elem);
+        contained.clear(indexToRmv);
+        concurAdded.clear(indexToRmv);
+        concurRemoved.set(indexToRmv);
+        full = false;
+        numAppliedOps += 1;
         return this;
     }
 
@@ -103,8 +109,8 @@ public final class TrackedFilter implements Mutable {
         return filter;
     }
 
-    public boolean isFull() {
-        return full;
+    public boolean canAdd() {
+        return !full && indexToAdd < sliceToAdd.until();
     }
 
     public int getNumAppliedOps() {

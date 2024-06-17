@@ -46,7 +46,7 @@ public sealed abstract class LatEvalLoop extends EvalLoop permits Distr2LatEvalL
                 .updated("sync freq", syncFreq)
                 .appended("load factor", loadFactor)
                 .updated("theor fpp", filter.fpp())
-                .appended("emp factor", empiricalFpp);
+                .appended("emp fpp", empiricalFpp);
     }
 
     @Override
