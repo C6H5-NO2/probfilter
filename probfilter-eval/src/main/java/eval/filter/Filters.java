@@ -2,6 +2,7 @@ package eval.filter;
 
 import com.c6h5no2.probfilter.crdt.CvRFilter;
 import com.c6h5no2.probfilter.crdt.FluentCvRFilter;
+import com.google.common.io.CountingOutputStream;
 import eval.int128.Int128;
 import eval.int128.Int128Array;
 import eval.util.AkkaSerializer;
@@ -9,9 +10,12 @@ import eval.util.OffsetBitSet;
 import eval.util.Slice;
 import scala.Tuple2;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.zip.GZIPOutputStream;
 
 
 public final class Filters {
@@ -147,7 +151,10 @@ public final class Filters {
         return (double) numFp / tests.length();
     }
 
-    public static int getSerializedSize(CvRFilter<?, ?> filter) {
+    /**
+     * @return a tuple of the uncompressed size and the compressed size
+     */
+    public static Tuple2<Integer, Integer> getSerializedSizeCompressed(Object filter) {
         if (filter instanceof FluentCvRFilter<?> fluent) {
             CvRFilter<?, ?> inner;
             try {
@@ -157,42 +164,37 @@ public final class Filters {
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-            return getSerializedSize(inner);
-        } else if (filter instanceof AkkaGSet<?> gset) {
-            return AkkaSerializer.getInstance().gsetToProto(gset.getAkkaSet()).getSerializedSize();
-        } else if (filter instanceof AkkaORSet<?> orset) {
-            return AkkaSerializer.getInstance().orsetToProto(orset.getAkkaSet()).getSerializedSize();
+            return getSerializedSizeCompressed(inner);
+        } else if (filter instanceof AkkaGSet<?> || filter instanceof AkkaORSet<?>) {
+            var serializer = AkkaSerializer.getInstance();
+            var proto = (filter instanceof AkkaGSet<?>) ?
+                serializer.gsetToProto(((AkkaGSet<?>) filter).getAkkaSet()) :
+                serializer.orsetToProto(((AkkaORSet<?>) filter).getAkkaSet());
+            // see akka.cluster.ddata.protobuf.SerializationSupport.compress
+            try (
+                var cnos = new CountingOutputStream(OutputStream.nullOutputStream());
+                var cos = new CountingOutputStream(new GZIPOutputStream(cnos, 4096, true))
+            ) {
+                proto.writeTo(cos);
+                cos.flush();
+                cos.close();
+                return new Tuple2<>((int) cos.getCount(), (int) cnos.getCount());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            try (var bos = new ByteArrayOutputStream();
-                 var oos = new ObjectOutputStream(bos)) {
+            try (
+                var cnos = new CountingOutputStream(OutputStream.nullOutputStream());
+                var cos = new CountingOutputStream(new GZIPOutputStream(cnos, 4096, true));
+                var oos = new ObjectOutputStream(cos)
+            ) {
                 oos.writeObject(filter);
                 oos.flush();
                 oos.close();
-                return bos.size();
+                return new Tuple2<>((int) cos.getCount(), (int) cnos.getCount());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    @Deprecated
-    @SuppressWarnings("unchecked")
-    public static <T> T deepcopy(T obj) {
-        T copy;
-        try {
-            var bos = new ByteArrayOutputStream();
-            var oos = new ObjectOutputStream(bos);
-            oos.writeObject(obj);
-            oos.flush();
-            oos.close();
-            var bytes = bos.toByteArray();
-            var bis = new ByteArrayInputStream(bytes);
-            var ois = new ObjectInputStream(bis);
-            copy = (T) ois.readObject();
-            ois.close();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        return copy;
     }
 }
