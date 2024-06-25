@@ -37,7 +37,7 @@ jobs:
       run: |
         mkdir -p src/main
         ln -s "$PWD/probfilter-verifx/src/main/verifx" src/main/verifx
-   - name: compile
+    - name: compile
       run: |
         sbt "; clean; probfilter-verifx/compile"
     - name: verify
