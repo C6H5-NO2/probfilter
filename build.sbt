@@ -15,7 +15,12 @@ val verifxID = "org.verifx" %% "verifx" % verifxVersion
 val akkaResolver = Seq(Keys.resolvers += ("Akka library repository" at "https://repo.akka.io/maven"))
 
 lazy val sharedSettings = Seq(
-  version := (if (System.getenv("GITHUB_ACTIONS") == "true") "" else "0.1.0-SNAPSHOT"), // handled by sbt-dynver
+  version ~= { v =>
+    if (System.getenv("GITHUB_ACTIONS") == "true")
+      v // handled by sbt-dynver
+    else
+      "0.1.0-SNAPSHOT"
+  },
   versionScheme := Some("semver-spec"),
   publish / skip := true,
   libraryDependencies ++= Seq(

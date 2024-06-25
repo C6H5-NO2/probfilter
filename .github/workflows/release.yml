@@ -8,6 +8,7 @@ on:
 
 jobs:
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -49,6 +50,11 @@ jobs:
       - name: reload release plugin
         run: |
           sed -i "s/\(addSbtPlugin(\"com.github.sbt\" % \"sbt-ci-release\" % \"\)[^\"]\+/\1$SBT_CI_RELEASE_VER/" project/plugins.sbt
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add project/plugins.sbt
+          git commit -m "workaround for sonatype central"
+          git tag "${GITHUB_REF#refs/tags/}" -m "${GITHUB_REF#refs/tags/}" -f
           sbt reload
         env:
           SBT_CI_RELEASE_VER: ${{ steps.build_sbt_ci_release.outputs.SBT_CI_RELEASE_VER }}
