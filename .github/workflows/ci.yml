@@ -19,12 +19,12 @@ jobs:
           - probfilter-akka
     runs-on: ubuntu-latest
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    - name: setup jdk 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: 17
-        distribution: temurin
-    - name: unit test
-      run: sbt "; clean; ${{ matrix.project }}/test"
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup jdk 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+      - name: unit test
+        run: sbt "; clean; ${{ matrix.project }}/test"
