@@ -19,7 +19,6 @@ jobs:
       with:
         java-version: 17
         distribution: temurin
-        cache: sbt
     # https://github.com/xerial/sbt-sonatype/issues/465#issuecomment-1965734347
     - name: build sbt-sonatype
       id: build_sbt_sonatype
