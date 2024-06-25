@@ -37,10 +37,12 @@ jobs:
       run: |
         mkdir -p src/main
         ln -s "$PWD/probfilter-verifx/src/main/verifx" src/main/verifx
+    - name: compile
+      run: |
+        sbt "; clean; probfilter-verifx/compile"
     - name: verify
       run: |
-        sbt clean
-        TEST_NAMES=$(sbt "show probfilter-verifx/definedTestNames" | grep -P -o '(?<=\* )\S+$' | sort)
+        TEST_NAMES=$(sbt "show probfilter-verifx/definedTestNames" | grep -P -o '(?<=\*\s)\S+$' | sort)
         for TEST_NAME in $TEST_NAMES; do
           echo proving "$TEST_NAME"
           sbt "probfilter-verifx/testOnly $TEST_NAME" -Djava.library.path="$PWD"

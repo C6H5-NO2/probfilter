@@ -1,4 +1,4 @@
-import sbt.*
+import sbt._
 
 
 object Dependencies {
@@ -14,6 +14,6 @@ object Dependencies {
   val scalatestID = "org.scalatest" %% "scalatest" % scalatestVersion
   val verifxID = "org.verifx" %% "verifx" % verifxVersion
 
-  val akkaResolver: Seq[Def.Setting[?]] =
+  val akkaResolver: Seq[Def.Setting[_]] =
     Seq(Keys.resolvers += ("Akka library repository" at "https://repo.akka.io/maven"))
 }
