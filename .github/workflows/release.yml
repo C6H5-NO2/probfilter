@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: setup jdk 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: 17
+        distribution: temurin
+        cache: sbt
+    # https://github.com/xerial/sbt-sonatype/issues/465#issuecomment-1965734347
+    - name: build sbt-sonatype
+      id: build_sbt_sonatype
+      run: |
+        git clone --branch adding-sonatype-central-client --depth 1 https://github.com/Andrapyre/sbt-sonatype.git
+        cd sbt-sonatype/
+        sbt compile publishLocal
+        SBT_SONATYPE_PUB_TO=~/.ivy2/local/org.xerial.sbt/sbt-sonatype/scala_2.12/sbt_1.0/
+        SBT_SONATYPE_VER=$(find $SBT_SONATYPE_PUB_TO -maxdepth 1 -mindepth 1 -type d | head -n 1 | xargs -n 1 basename)
+        echo "SBT_SONATYPE_VER=$SBT_SONATYPE_VER" >> $GITHUB_OUTPUT
+        cd ..
+        echo built sbt-sonatype $SBT_SONATYPE_VER
+    - name: build sbt-ci-release
+      id: build_sbt_ci_release
+      run: |
+        git clone --depth 1 https://github.com/sbt/sbt-ci-release.git
+        cd sbt-ci-release/
+        sed -i "s/\(addSbtPlugin(\"org.xerial.sbt\" % \"sbt-sonatype\" % \"\)[^\"]\+/\1$SBT_SONATYPE_VER/" project/plugins.sbt
+        sed -i "s/\(addSbtPlugin(\"org.xerial.sbt\" % \"sbt-sonatype\" % \"\)[^\"]\+/\1$SBT_SONATYPE_VER/" build.sbt
+        sbt compile publishLocal
+        SBT_CI_RELEASE_PUB_TO=~/.ivy2/local/com.github.sbt/sbt-ci-release/scala_2.12/sbt_1.0/
+        SBT_CI_RELEASE_VER=$(find $SBT_CI_RELEASE_PUB_TO -maxdepth 1 -mindepth 1 -type d | head -n 1 | xargs -n 1 basename)
+        echo "SBT_CI_RELEASE_VER=$SBT_CI_RELEASE_VER" >> $GITHUB_OUTPUT
+        cd ..
+        echo built sbt-ci-release $SBT_CI_RELEASE_VER
+      env:
+        SBT_SONATYPE_VER: ${{ steps.build_sbt_sonatype.outputs.SBT_SONATYPE_VER }}
+    - name: reload release plugin
+      run: |
+        rm -rf sbt-sonatype/
+        rm -rf sbt-ci-release/
+        sed -i "s/\(addSbtPlugin(\"com.github.sbt\" % \"sbt-ci-release\" % \"\)[^\"]\+/\1$SBT_CI_RELEASE_VER/" project/plugins.sbt
+        sbt reload
+      env:
+        SBT_CI_RELEASE_VER: ${{ steps.build_sbt_ci_release.outputs.SBT_CI_RELEASE_VER }}
+    - name: release
+      run: |
+        sbt ci-release
+      env:
+        PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+        PGP_SECRET: ${{ secrets.PGP_SECRET }}
+        SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+        SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+        CI_RELEASE: publishSigned
