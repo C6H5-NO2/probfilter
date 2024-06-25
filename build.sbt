@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion := "2.13.14"
 
-import Dependencies._
+import Dependencies.*
 import com.geirsson.CiReleasePlugin.isGithub
 
 val sharedSettings = Seq(
