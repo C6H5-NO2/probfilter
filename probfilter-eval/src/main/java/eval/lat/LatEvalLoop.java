@@ -10,7 +10,7 @@ import eval.util.EvalRecord;
 import eval.util.Slice;
 
 
-public sealed abstract class LatEvalLoop extends EvalLoop permits Distr2LatEvalLoop {
+public sealed abstract class LatEvalLoop extends EvalLoop permits Distr2LatEvalLoop, Distr2SyncedEvalLoop {
     private static final String[] CSV_HEADER_FIELDS = new String[]{
         "capacity",
         "sync freq",

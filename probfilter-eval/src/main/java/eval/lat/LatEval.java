@@ -22,6 +22,9 @@ public final class LatEval {
     }
 
     public void evalAll(boolean removable) {
+        new Distr2SyncedEvalLoop(LOAD_MAGNITUDE, REPEAT, ADD_RATIO_100, config.supplier())
+            .eval(String.format("results/lat/%s_add1.00_synced.csv", config.nameId()), true);
+
         new Distr2LatEvalLoop(LOAD_MAGNITUDE, REPEAT, SYNC_FREQ_MAGNITUDE_RANGE, ADD_RATIO_100, config.supplier())
             .eval(String.format("results/lat/%s_add1.00.csv", config.nameId()), true);
 

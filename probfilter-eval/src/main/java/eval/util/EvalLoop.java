@@ -32,7 +32,7 @@ public abstract class EvalLoop {
             var writer =
                 Strings.isNullOrEmpty(saveTo) ?
                     new NullDeviceWriter() :
-                    Files.newBufferedWriter(Path.of(saveTo), StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND)
+                    Files.newBufferedWriter(Path.of(saveTo), StandardOpenOption.CREATE/*_NEW*/, StandardOpenOption.APPEND)
         ) {
             this.writer = writer;
             preVarLoop();
