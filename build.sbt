@@ -22,14 +22,13 @@ lazy val sharedSettings = Seq(
       "0.1.0-SNAPSHOT"
   },
   versionScheme := Some("semver-spec"),
-  publish / skip := true,
   libraryDependencies ++= Seq(
     scalatestID % Test
   ),
-)
+  publish / skip := true
+) ++ publishSettings
 
 lazy val publishSettings = Seq(
-  publish / skip := false,
   // credentials += ???, // handled by sbt-sonatype
   crossPaths := false,
   description := "A lib for conflict-free replicated probabilistic filters.",
@@ -77,7 +76,7 @@ lazy val core = Project("probfilter-core", file("probfilter-core")).enablePlugin
   //     oldStrategy(x)
   // },
   // assembly / assemblyOption ~= {_.withIncludeScala(false)},
-  publishSettings
+  publish / skip := false
 )
 
 lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(core).settings(
@@ -87,7 +86,7 @@ lazy val akka = Project("probfilter-akka", file("probfilter-akka")).dependsOn(co
     akkaClusterID % Provided,
     akkaActorTestkitID % Test
   ),
-  publishSettings,
+  publish / skip := false,
   // `scaladoc` has problem compiling the code. Use `javadoc` only.
   // Perhaps in the future we can have `javadoc` for Java and `scaladoc` for Scala with interlinking.
   Compile / doc / sources := (Compile / doc / sources).value.filter(_.name.endsWith(".java"))
