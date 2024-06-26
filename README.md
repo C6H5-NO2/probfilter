@@ -1,6 +1,27 @@
 # probfilter
 `probfilter` is a Java / Scala library for conflict-free replicated probabilistic filters.
 
+## Usage
+To add `probfilter` as dependency, using Maven for instance, include the following snippet:
+```xml
+<dependency>
+    <groupId>com.c6h5no2</groupId>
+    <artifactId>probfilter-core</artifactId>
+    <version>0.1.1</version>
+</dependency>
+```
+
+If you need to work with [Akka Cluster](https://doc.akka.io/docs/akka/current/typed/index-cluster.html), include also the adapters:
+```xml
+<dependency>
+    <groupId>com.c6h5no2</groupId>
+    <artifactId>probfilter-akka</artifactId>
+    <version>0.1.1</version>
+</dependency>
+```
+
+Substitute `version` if necessary.
+
 ## Data Types
 `probfilter` provides the following filters implemented as state-based (aka convergent) CRDTs, coming with both immutable and mutable variants.
 
