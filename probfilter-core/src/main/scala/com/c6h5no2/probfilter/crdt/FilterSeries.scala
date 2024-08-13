@@ -86,14 +86,15 @@ final class FilterSeries[E, F <: CvRFilter[E, F] : ClassTag] private(
     this.series.length <= that.series.length && this.series.lazyZip(that.series).forall(_ lteq _)
   }
 
-  @tailrec
   override def merge(that: FilterSeries[E, F]): FilterSeries[E, F] = {
     val diff = that.series.length - this.series.length
     if (diff < 0) {
-      that.merge(this)
+      val thatPadded = Range.apply(0, -diff).foldLeft(that)((s, _) => s.expand(true))
+      val newSeries = this.series.lazyZip(thatPadded.series).map(_ merge _)
+      copy(newSeries)
     } else {
-      val thiz = Range.apply(0, diff).foldLeft(this)((s, _) => s.expand(true))
-      val newSeries = thiz.series.lazyZip(that.series).map(_ merge _)
+      val thisPadded = Range.apply(0, diff).foldLeft(this)((s, _) => s.expand(true))
+      val newSeries = thisPadded.series.lazyZip(that.series).map(_ merge _)
       copy(newSeries)
     }
   }
