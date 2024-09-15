@@ -1,6 +1,8 @@
 package eval.mem;
 
 import com.c6h5no2.probfilter.crdt.FluentCvRFilter;
+import com.c6h5no2.probfilter.pdsa.cuckoo.ArrayCuckooTable;
+import com.c6h5no2.probfilter.pdsa.cuckoo.CuckooFilter;
 import eval.data.Dataset;
 import eval.filter.Filters;
 import eval.int128.Int128;
@@ -58,6 +60,7 @@ public sealed abstract class MemEvalLoop extends EvalLoop permits Distr2MemEvalL
         var serializeResult = Filters.getSerializedSizeCompressed(filter);
         int serializedSize = serializeResult._1;
         double serializedBpe = (double) serializedSize / cardinality;
+        // logCuckooLikeFilterDetails(filter);
         return
             records
                 .appended("capacity", capacity)
@@ -88,4 +91,30 @@ public sealed abstract class MemEvalLoop extends EvalLoop permits Distr2MemEvalL
     }
 
     protected abstract FluentCvRFilter<Int128> loadFilter(int capacity, Int128Array data, int load, int epoch);
+
+    @SuppressWarnings("rawtypes")
+    private static void logCuckooLikeFilterDetails(FluentCvRFilter<Int128> fluent) {
+        try {
+            var field = fluent.getClass().getDeclaredField("filter");
+            field.setAccessible(true);
+            var inner = field.get(fluent);
+            field = inner.getClass().getDeclaredField("state");
+            field.setAccessible(true);
+            var state = field.get(inner);
+            if (state instanceof CuckooFilter filter && filter.table() instanceof ArrayCuckooTable table) {
+                int cardinality = table.overflowed().size();
+                var result = Filters.getSerializedSizeCompressed(table.overflowed());
+                System.out.printf(
+                    "overflowed card: %d, size: %d (%f), comp: %d (%f)%n",
+                    cardinality,
+                    result._1,
+                    (double) result._1 / cardinality,
+                    result._2,
+                    (double) result._2 / cardinality
+                );
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

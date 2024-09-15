@@ -9,29 +9,29 @@ import eval.int128.Int128Funnel;
 
 
 public enum FilterConfig {
-    MUT_GBF("gbf_3e-2", (capacity, rid) -> {
-        var strategy = SimpleBloomStrategy.apply(capacity, 3e-2, Int128Funnel.INSTANCE);
+    MUT_GBF("gbf_3.1e-2", (capacity, rid) -> {
+        var strategy = SimpleBloomStrategy.apply(capacity, 0.03125, Int128Funnel.INSTANCE);
         return GBloomFilter.apply(true, strategy).asFluent();
     }),
 
     IMM_GCF_1("gcf_bs1_f8", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity, 1, 500, 8, Int128Funnel.INSTANCE);
-        return GCuckooFilter.apply(false, strategy, 0).asFluent();
+        return GCuckooFilter.apply(false, strategy, rid).asFluent();
     }),
 
     MUT_GCF_1("gcf_bs1_f8", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity, 1, 500, 8, Int128Funnel.INSTANCE);
-        return GCuckooFilter.apply(true, strategy, 0).asFluent();
+        return GCuckooFilter.apply(true, strategy, rid).asFluent();
     }),
 
     IMM_GCF_4("gcf_bs4_f8", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity, 4, 500, 8, Int128Funnel.INSTANCE);
-        return GCuckooFilter.apply(false, strategy, 0).asFluent();
+        return GCuckooFilter.apply(false, strategy, rid).asFluent();
     }),
 
     MUT_GCF_4("gcf_bs4_f8", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity, 4, 500, 8, Int128Funnel.INSTANCE);
-        return GCuckooFilter.apply(true, strategy, 0).asFluent();
+        return GCuckooFilter.apply(true, strategy, rid).asFluent();
     }),
 
     IMM_ORCF_1("orcf_bs1_f8", (capacity, rid) -> {
@@ -54,19 +54,29 @@ public enum FilterConfig {
         return ORCuckooFilter.apply(true, strategy, rid, rid).asFluent();
     }),
 
-    MUT_SCGBF("scgbf_3e-2_c4", (capacity, rid) -> {
-        var strategy = SimpleBloomStrategy.apply(capacity >> 2, 3e-2, Int128Funnel.INSTANCE);
+    MUT_SCGBF("scgbf_3.1e-2_c4", (capacity, rid) -> {
+        var strategy = SimpleBloomStrategy.apply(capacity >> 2, 0.03125, Int128Funnel.INSTANCE);
         return ScGBloomFilter.apply(true, strategy).asFluent();
     }),
 
     IMM_SCGCF("scgcf_bs4_f8_c4", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity >> 2, 4, 500, 8, Int128Funnel.INSTANCE);
-        return ScGCuckooFilter.apply(false, strategy, 0).asFluent();
+        return ScGCuckooFilter.apply(false, strategy, rid).asFluent();
+    }),
+
+    MUT_SCGCF("scgcf_bs4_f8_c4", (capacity, rid) -> {
+        var strategy = SimpleCuckooStrategy.apply(capacity >> 2, 4, 500, 8, Int128Funnel.INSTANCE);
+        return ScGCuckooFilter.apply(true, strategy, rid).asFluent();
     }),
 
     IMM_SCORCF("scorcf_bs4_f8_c4", (capacity, rid) -> {
         var strategy = SimpleCuckooStrategy.apply(capacity >> 2, 4, 500, 8, CuckooEntryType.VERSIONED_LONG, Int128Funnel.INSTANCE);
         return ScORCuckooFilter.apply(false, strategy, rid, rid).asFluent();
+    }),
+
+    MUT_SCORCF("scorcf_bs4_f8_c4", (capacity, rid) -> {
+        var strategy = SimpleCuckooStrategy.apply(capacity >> 2, 4, 500, 8, CuckooEntryType.VERSIONED_LONG, Int128Funnel.INSTANCE);
+        return ScORCuckooFilter.apply(true, strategy, rid, rid).asFluent();
     }),
 
     IMM_GSET("gset", (capacity, rid) -> new AkkaGSet<Int128>().asFluent()),
