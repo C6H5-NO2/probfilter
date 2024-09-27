@@ -40,44 +40,6 @@ public final class Distr2SyncAllFprLoop extends FprEvalLoop {
         );
     }
 
-    // @Override
-    // protected FluentCvRFilter<Int128>
-    // loadFilter(int capacity, Int128Array data, int load, int epoch, int syncFreq) {
-    //     var slicesToAdd = Slice.fromLength(Dataset.LENGTH_OF_BATCH * epoch, load).split(distrRatio);
-    //
-    //     var empty = supplier.get(capacity, (short) 0);
-    //
-    //     var filter1 = new TrackedFilter(
-    //         empty,
-    //         data,
-    //         slicesToAdd._1
-    //     );
-    //     var filter2 = new TrackedFilter(
-    //         empty,
-    //         data,
-    //         slicesToAdd._2
-    //     );
-    //
-    //     var rng = new Random(epoch);
-    //     for (int opIndex = 0; opIndex < load; ++opIndex) {
-    //         if (!filter1.canAdd() && !filter2.canAdd()) {
-    //             break;
-    //         }
-    //         boolean distrToFilter1 = rng.nextDouble() < distrRatio;
-    //         boolean opOnFilter1 =
-    //             (distrToFilter1 && filter1.canAdd()) || (!distrToFilter1 && !filter2.canAdd());
-    //         if (opOnFilter1) {
-    //             filter1.add();
-    //             filter2.syncFilter(filter1);
-    //         } else {
-    //             filter2.add();
-    //             filter1.syncFilter(filter2);
-    //         }
-    //     }
-    //
-    //     return filter1.getFilter();
-    // }
-
     @Override
     protected FluentCvRFilter<Int128>
     loadFilter(int capacity, Int128Array data, int load, int epoch, int syncFreq) {
