@@ -55,3 +55,6 @@ assert !filter2.contains(elem);
 filter1 = filter1.merge(filter2);
 assert !filter1.contains(elem);
 ```
+
+## Paper
+[Thesis](https://resolver.tudelft.nl/uuid:5e06978e-a904-4740-a8a1-59c75fde75eb)
