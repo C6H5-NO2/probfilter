@@ -60,6 +60,7 @@ lazy val root = Project("probfilter", file(".")).settings(
 )
 
 lazy val core = Project("probfilter-core", file("probfilter-core")).enablePlugins(
+  ProtobufPlugin
 ).settings(
   sharedSettings,
   libraryDependencies ++= Seq(

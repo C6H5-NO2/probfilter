@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "com.c6h5no2.probfilter.collection";
+option java_multiple_files = true;
+option optimize_for = LITE_RUNTIME;
+
+message ArrayMappedTrieMessage {
+  optional int32 height = 1;
+  repeated fixed32 data = 2;
+}

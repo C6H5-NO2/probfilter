@@ -2,6 +2,7 @@ package com.c6h5no2.probfilter.collection
 
 import scala.annotation.tailrec
 import scala.collection.AbstractIterator
+import scala.jdk.CollectionConverters.IterableHasAsJava
 
 final class ArrayMappedTrie private(height: Int, data: AnyRef) {
 
@@ -38,6 +39,15 @@ final class ArrayMappedTrie private(height: Int, data: AnyRef) {
       i += 1
       get(i - 1)
     }
+  }
+
+  // todo: very inefficient
+  def toProto: ArrayMappedTrieMessage = {
+    ArrayMappedTrieMessage
+      .newBuilder()
+      .setHeight(height)
+      .addAllData(iterator.map(java.lang.Integer.valueOf).to(Iterable).asJava)
+      .build()
   }
 }
 
