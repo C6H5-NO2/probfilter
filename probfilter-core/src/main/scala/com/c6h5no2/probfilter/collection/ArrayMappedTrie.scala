@@ -35,6 +35,7 @@ final class ArrayMappedTrie private(height: Int, data: AnyRef) {
 
     override def hasNext: Boolean = i < cap
 
+    // todo: cache lowest layer
     override def next(): Int = {
       i += 1
       get(i - 1)
