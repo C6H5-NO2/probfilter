@@ -15,14 +15,14 @@ import scala.reflect.{ClassTag, classTag}
 @SerialVersionUID(1L)
 final class TreeCuckooTable[T: ClassTag] private(
   data: ArrayMappedTrie,
-  overflowed: MapCuckooTable[T],
+  overflowed: Option[TreeCuckooTable[T]],
   val numBuckets: Int,
   val bucketSize: Int,
   val size: Int,
 ) extends TypedCuckooTable[T] {
   def this(numBuckets: Int, bucketSize: Int) = this(
     new ArrayMappedTrie(),
-    new MapCuckooTable.Immutable[T](bucketSize),
+    Option.empty,
     numBuckets,
     bucketSize,
     0
@@ -31,21 +31,31 @@ final class TreeCuckooTable[T: ClassTag] private(
   override def storageType: ClassTag[T] = classTag[T]
 
   override def get(index: Int): Array[T] = {
-    val from = index * bucketSize
-    val d = data.slice(from, from + bucketSize).filter(_ != 0L.asInstanceOf[T]).toArray[T]
-    val o = overflowed.get(index)
-    ArrayOpsEx.concated(d, o)
+    getWithZeros(index).filter(_ != 0L.asInstanceOf[T]).toArray[T]
   }
 
-  override def set(index: Int, value: Array[T]): TypedCuckooTable[T] = {
-    val newSize = size - size(index) + value.length
-    var newData = data
-    newData = newData.patch(index * bucketSize, value, math.min(bucketSize, value.length))
+  private def getWithZeros(index: Int): Array[T] = {
+    val from = index * bucketSize
+    val d = data.slice[T](from, from + bucketSize)
+    overflowed.fold(d)(o => ArrayOpsEx.concated(d, o.get(index)))
+  }
+
+  override def set(index: Int, value: Array[T]): TreeCuckooTable[T] = {
+    val bucketLoad = getWithZeros(index).length
+    if (value.length < bucketLoad) {
+      return set(index, value.padTo[T](bucketLoad, ArrayOpsEx.boxedZero(value).asInstanceOf[T]))
+    }
+    var newData = data.patch(index * bucketSize, value, math.min(bucketSize, value.length))
+    var newOverflowed = overflowed
     if (value.length < bucketSize) {
       val zeros = ArrayOpsEx.zeros[T](bucketSize - value.length)
       newData = newData.patch(index * bucketSize + value.length, zeros, zeros.length)
+    } else if (value.length > bucketSize) {
+      // maybe there are better ways to shift elements in the current tree rather than creating new ones
+      val ov = overflowed.getOrElse(new TreeCuckooTable[T](numBuckets, bucketSize)).set(index, value.drop(bucketSize))
+      newOverflowed = Option.apply(ov)
     }
-    val newOverflowed = overflowed.set(index, value.drop(bucketSize))
+    val newSize = size - bucketLoad + value.length
     new TreeCuckooTable[T](newData, newOverflowed, index + 1, bucketSize, newSize)
   }
 
