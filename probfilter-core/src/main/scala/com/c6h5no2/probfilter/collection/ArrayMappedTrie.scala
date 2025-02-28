@@ -4,7 +4,10 @@ import scala.annotation.tailrec
 import scala.collection.AbstractIterator
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
-final class ArrayMappedTrie private(height: Int, data: AnyRef) {
+/**
+ * @note This variant of Trie uses `0` for `null`.
+ */
+final class ArrayMappedTrie private(private val height: Int, private val data: AnyRef) {
 
   import ArrayMappedTrie._
 
@@ -29,18 +32,7 @@ final class ArrayMappedTrie private(height: Int, data: AnyRef) {
     }
   }
 
-  def iterator: Iterator[Int] = new AbstractIterator[Int] {
-    private[this] var i = 0
-    private[this] val cap = getCapacityByHeight(height)
-
-    override def hasNext: Boolean = i < cap
-
-    // todo: cache lowest layer
-    override def next(): Int = {
-      i += 1
-      get(i - 1)
-    }
-  }
+  def iterator: Iterator[Int] = new ArrayMappedTrieIterator(this)
 
   // todo: very inefficient
   def toProto: ArrayMappedTrieMessage = {
@@ -138,6 +130,18 @@ object ArrayMappedTrie {
         }
         newData.update(offset, leafPath)
         newData
+    }
+  }
+
+  private class ArrayMappedTrieIterator(trie: ArrayMappedTrie) extends AbstractIterator[Int] {
+    private[this] var index = 0
+    private[this] val capacity = getCapacityByHeight(trie.height)
+
+    override def hasNext: Boolean = index < capacity
+
+    override def next(): Int = {
+      index += 1
+      trie.get(index - 1)
     }
   }
 }
