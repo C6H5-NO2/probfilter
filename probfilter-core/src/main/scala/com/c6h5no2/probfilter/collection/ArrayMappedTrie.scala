@@ -68,20 +68,29 @@ object ArrayMappedTrie {
   }
 
   @tailrec
-  private def getLeafPath(index: Int, height: Int, data: AnyRef): Int = {
+  private def getLeaf(index: Int, height: Int, data: AnyRef): Leaf = {
     if (data == null) {
-      defaultValue
+      null
     } else {
       height match {
         case 0 =>
-          val offset = index & mask
-          data.asInstanceOf[Leaf].apply(offset)
+          data.asInstanceOf[Leaf]
 
         case _ => // 1 to maxHeight
           val offset = (index >>> (logWidth * height)) & mask
           val next = data.asInstanceOf[Branch].apply(offset)
-          getLeafPath(index, height - 1, next)
+          getLeaf(index, height - 1, next)
       }
+    }
+  }
+
+  private def getLeafPath(index: Int, height: Int, data: AnyRef): Int = {
+    val leaf = getLeaf(index, height, data)
+    if (leaf == null) {
+      defaultValue
+    } else {
+      val offset = index & mask
+      leaf.apply(offset)
     }
   }
 
@@ -136,12 +145,21 @@ object ArrayMappedTrie {
   private class ArrayMappedTrieIterator(trie: ArrayMappedTrie) extends AbstractIterator[Int] {
     private[this] var index = 0
     private[this] val capacity = getCapacityByHeight(trie.height)
+    private[this] var leaf: Leaf = _
 
     override def hasNext: Boolean = index < capacity
 
     override def next(): Int = {
+      val offset = index & mask
+      if (offset == 0) {
+        leaf = getLeaf(index, trie.height, trie.data)
+      }
       index += 1
-      trie.get(index - 1)
+      if (leaf == null) {
+        defaultValue
+      } else {
+        leaf.apply(offset)
+      }
     }
   }
 }
