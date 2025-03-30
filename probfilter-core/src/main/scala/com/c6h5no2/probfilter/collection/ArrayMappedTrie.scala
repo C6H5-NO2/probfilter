@@ -34,13 +34,33 @@ final class ArrayMappedTrie private(private val height: Int, private val data: A
 
   def iterator: Iterator[Int] = new ArrayMappedTrieIterator(this)
 
-  // todo: very inefficient
-  def toProto: ArrayMappedTrieMessage = {
+  def toProtoRaw: ArrayMappedTrieMessage = {
     ArrayMappedTrieMessage
       .newBuilder()
       .setHeight(height)
       .addAllData(iterator.map(java.lang.Integer.valueOf).to(Iterable).asJava)
       .build()
+  }
+
+  def toProtoHashEncoded: ArrayMappedTrieMessage = {
+    val builder =
+      ArrayMappedTrieMessage
+        .newBuilder()
+        .setHeight(height)
+    var indexOfHash = 0
+    iterator.zipWithIndex.foreach { case (value, index) =>
+      val offset = index & mask
+      if (offset == 0) {
+        indexOfHash = builder.getDataCount
+        builder.addData(0)
+      }
+      if (value != defaultValue) {
+        builder.addData(value)
+        val hash = builder.getData(indexOfHash)
+        builder.setData(indexOfHash, hash | (1 << offset))
+      }
+    }
+    builder.build()
   }
 }
 
