@@ -34,8 +34,8 @@ Substitute `version` if necessary.
   - `class ScORCuckooFilter`: scalable observed-remove replicated cuckoo filter
 
 Besides, there are also two adapter classes for convenience.
-- `class FluentCvRFilter`: offers a fluent interface
-- `class ReplicatedFilter`: implements Akka's [ReplicatedData](https://doc.akka.io/docs/akka/current/typed/distributed-data.html#replicated-data-types)
+- `class FluentCvRFilter`: offering a fluent interface
+- `class ReplicatedFilter`: implementing Akka's [ReplicatedData](https://doc.akka.io/docs/akka/current/typed/distributed-data.html#replicated-data-types)
 
 ## Example
 ```java
@@ -58,3 +58,13 @@ assert !filter1.contains(elem);
 
 ## Paper
 [Thesis](https://resolver.tudelft.nl/uuid:5e06978e-a904-4740-a8a1-59c75fde75eb)
+
+```bibtex
+@mastersthesis{xiong2024,
+  author={Xiong, Junbo},
+  title={Conflict-Free Replicated Probabilistic Filter},
+  school={Delft University of Technology},
+  year={2024},
+  url={https://resolver.tudelft.nl/uuid:5e06978e-a904-4740-a8a1-59c75fde75eb}
+}
+```
