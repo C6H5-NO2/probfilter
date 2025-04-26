@@ -31,7 +31,12 @@ final class TreeCuckooTable[T: ClassTag] private(
   override def storageType: ClassTag[T] = classTag[T]
 
   override def get(index: Int): Array[T] = {
-    getWithZeros(index).filter(_ != 0L.asInstanceOf[T]).toArray[T]
+    val arr = getWithZeros(index)
+    // should've made it an interface
+    implicitly[ClassTag[T]] match {
+      case ClassTag.Boolean => arr.filter(_ != false.asInstanceOf[T]).toArray[T]
+      case _ => arr.filter(_ != 0L.asInstanceOf[T]).toArray[T]
+    }
   }
 
   private def getWithZeros(index: Int): Array[T] = {
@@ -43,7 +48,11 @@ final class TreeCuckooTable[T: ClassTag] private(
   override def set(index: Int, value: Array[T]): TreeCuckooTable[T] = {
     val bucketLoad = getWithZeros(index).length
     if (value.length < bucketLoad) {
-      return set(index, value.padTo[T](bucketLoad, ArrayOpsEx.boxedZero(value).asInstanceOf[T]))
+      val elem = implicitly[ClassTag[T]] match {
+        case ClassTag.Boolean => false.asInstanceOf[T]
+        case _ => ArrayOpsEx.boxedZero(value).asInstanceOf[T]
+      }
+      return set(index, value.padTo[T](bucketLoad, elem))
     }
     var newData = data.patch(index * bucketSize, value, math.min(bucketSize, value.length))
     var newOverflowed = overflowed
