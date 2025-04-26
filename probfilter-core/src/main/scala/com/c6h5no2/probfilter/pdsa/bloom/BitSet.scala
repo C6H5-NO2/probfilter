@@ -1,12 +1,13 @@
 package com.c6h5no2.probfilter.pdsa.bloom
 
+import com.c6h5no2.probfilter.collection.ArrayMappedTrie
 import com.c6h5no2.probfilter.util.{Immutable => ImmCol, Mutable => MutCol}
 
 import scala.collection.immutable.{BitSet => ImmBitSet}
 import scala.collection.mutable.{BitSet => MutBitSet}
 
 
-sealed trait BitSet extends Serializable {
+trait BitSet extends Serializable {
   def size: Int
 
   def contains(elem: Int): Boolean
@@ -54,5 +55,45 @@ object BitSet {
     override def union(that: BitSet): BitSet = copy(this.bitset.|=(that.bitset))
 
     private def copy(bitset: MutBitSet): BitSet = this // bitset is mutated in-place
+  }
+
+  @SerialVersionUID(1L)
+  final class Trie private(private val amt: ArrayMappedTrie) extends BitSet {
+    def this() = this(new ArrayMappedTrie())
+
+    override def size: Int = amt.iterator.foldLeft(0) { (acc, x) =>
+      acc + java.lang.Integer.bitCount(x)
+    }
+
+    override def contains(elem: Int): Boolean =
+      ((amt.get(elem >>> 5) >>> (elem & 31)) & 1) != 0
+
+    override def add(elems: IterableOnce[Int]): BitSet = {
+      val t = elems.iterator.foldLeft(amt)(Trie.add)
+      new Trie(t)
+    }
+
+    override def union(that: BitSet): BitSet = that match {
+      case that: Trie => add(that.amt.iterator)
+      case _ => add(that.bitset)
+    }
+
+    override protected def bitset: collection.BitSet = throw new UnsupportedOperationException()
+
+    override def toString: String = amt.iterator.mkString("BitMap.Tire(", ", ", ")")
+  }
+
+  object Trie {
+    private def add(amt: ArrayMappedTrie, i: Int): ArrayMappedTrie = {
+      val x0 = amt.get(i >>> 5)
+      val x1 = x0 | (1 << (i & 31))
+      if (x1 == x0) amt else amt.set(i >>> 5, x1)
+    }
+
+    private def remove(amt: ArrayMappedTrie, i: Int): ArrayMappedTrie = {
+      val x0 = amt.get(i >>> 5)
+      val x1 = x0 & ~(1 << (i & 31))
+      if (x1 == x0) amt else amt.set(i >>> 5, x1)
+    }
   }
 }
