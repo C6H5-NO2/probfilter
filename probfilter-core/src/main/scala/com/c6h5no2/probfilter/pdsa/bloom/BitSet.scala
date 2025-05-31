@@ -28,6 +28,7 @@ object BitSet {
   }
 
   @SerialVersionUID(1L)
+  @deprecated
   final class Immutable private(protected val bitset: ImmBitSet) extends BitSet with ImmCol {
     def this() = this(ImmBitSet.empty)
 
@@ -43,6 +44,7 @@ object BitSet {
   }
 
   @SerialVersionUID(1L)
+  @deprecated
   final class Mutable private(protected val bitset: MutBitSet) extends BitSet with MutCol {
     def this() = this(MutBitSet.empty)
 

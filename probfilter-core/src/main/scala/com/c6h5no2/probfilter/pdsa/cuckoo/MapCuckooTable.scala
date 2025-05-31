@@ -11,6 +11,7 @@ import scala.reflect.{ClassTag, classTag}
  * A [[CuckooTable]] based on [[scala.collection.immutable.TreeMap immutable]] or
  * [[scala.collection.mutable.TreeMap mutable]] [[scala.collection.SortedMap]].
  */
+@deprecated
 sealed trait MapCuckooTable[T] extends TypedCuckooTable[T] {
   override final def numBuckets: Int = if (data.isEmpty) 0 else data.lastKey + 1
 
@@ -43,6 +44,7 @@ object MapCuckooTable {
       new MapCuckooTable.Immutable[T](numBuckets, bucketSize)(storageType)
   }
 
+  @deprecated
   @SerialVersionUID(1L)
   final class Immutable[T: ClassTag] private(
     protected val data: immutable.TreeMap[Int, Array[T]],
@@ -68,6 +70,7 @@ object MapCuckooTable {
     }
   }
 
+  @deprecated
   @SerialVersionUID(1L)
   final class Mutable[T: ClassTag] private(
     protected val data: mutable.TreeMap[Int, Array[T]],

@@ -8,6 +8,7 @@ import scala.reflect.{ClassTag, classTag}
 
 
 /** A [[CuckooTable]] based on [[scala.Array]]. */
+@deprecated
 sealed trait ArrayCuckooTable[T] extends TypedCuckooTable[T] {
   override final def numBuckets: Int = data.length / bucketSize
 
@@ -58,6 +59,7 @@ object ArrayCuckooTable {
    * @note "Mutation" always copies the whole array.
    *       [[ArrayCuckooTable.Mutable]] is preferable in terms of performance.
    */
+  @deprecated
   @SerialVersionUID(1L)
   final class Immutable[T: ClassTag] private[cuckoo](
     protected val data: Array[T],
@@ -87,6 +89,7 @@ object ArrayCuckooTable {
       ArrayCuckooTable.toMapCuckooTable[T](this, new MapCuckooTable.Immutable[T](bucketSize))
   }
 
+  @deprecated
   @SerialVersionUID(1L)
   final class Mutable[T: ClassTag] private[cuckoo](
     protected var data: Array[T],

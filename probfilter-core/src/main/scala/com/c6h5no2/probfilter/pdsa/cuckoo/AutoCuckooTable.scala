@@ -6,6 +6,7 @@ import scala.reflect.ClassTag
 
 
 /** A [[CuckooTable]] that automatically switches between [[MapCuckooTable]] and [[ArrayCuckooTable]]. */
+@deprecated
 sealed trait AutoCuckooTable[T] extends TypedCuckooTable[T] {
   override final def storageType: ClassTag[T] = data.storageType
 
@@ -56,6 +57,7 @@ object AutoCuckooTable {
       new AutoCuckooTable.Immutable[T](numBuckets, bucketSize)(storageType)
   }
 
+  @deprecated
   @SerialVersionUID(1L)
   final class Immutable[T: ClassTag] private(
     protected val data: TypedCuckooTable[T],
@@ -70,6 +72,7 @@ object AutoCuckooTable {
     }
   }
 
+  @deprecated
   @SerialVersionUID(1L)
   final class Mutable[T: ClassTag] private(
     protected var data: TypedCuckooTable[T],
