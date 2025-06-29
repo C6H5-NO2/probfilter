@@ -11,6 +11,7 @@ import java.io.Serial;
 /**
  * A CvRFilter with fluent interface.
  */
+@Deprecated
 public final class FluentCvRFilter<E> implements CvRFilter<E, FluentCvRFilter<E>> {
     @Serial
     private static final long serialVersionUID = 1L;
