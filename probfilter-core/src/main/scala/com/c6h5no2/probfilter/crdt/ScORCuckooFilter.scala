@@ -51,7 +51,7 @@ sealed trait ScORCuckooFilter[E] extends CvRFilter[E, ScORCuckooFilter[E]] {
     } else {
       // remove from a random sub-filter
       val rng = rngCopy
-      val index = indexes.apply(rng.nextInt(indexes.length))
+      val index = indexes.apply(rng.getInt(indexes.length))
       val updated = state.update(index, _.remove(elem))
       val hist = updated.head.hist
       copy(updated.shrink(), hist, rng)
@@ -120,7 +120,7 @@ object ScORCuckooFilter {
 
     override def fpp: Double = initStrategy.fpp
 
-    override protected def rngCopy: RandomIntGenerator = rng.copy()
+    override protected def rngCopy: RandomIntGenerator = rng.nextState()
 
     override protected def copy(state: FilterSeries[E, ORCuckooFilter[E]]): ScORCuckooFilter[E] = {
       val newSupplier = if (state.length == 0) this.supplier else this.supplier.copy(state.head.hist)
@@ -135,7 +135,7 @@ object ScORCuckooFilter {
     ): ScORCuckooFilter[E] = {
       val newSupplier = this.supplier.copy(hist)
       val newState = state.copy(newSupplier)
-      new ScORCuckooFilter.Immutable[E](newState, newSupplier, this.initStrategy, rng.copy())
+      new ScORCuckooFilter.Immutable[E](newState, newSupplier, this.initStrategy, rng.nextState())
     }
   }
 
@@ -167,7 +167,7 @@ object ScORCuckooFilter {
 
     override def fpp: Double = initStrategy.fpp
 
-    override protected def rngCopy: RandomIntGenerator = rng.copy()
+    override protected def rngCopy: RandomIntGenerator = rng.nextState()
 
     override protected def copy(state: FilterSeries[E, ORCuckooFilter[E]]): ScORCuckooFilter[E] = {
       this.supplier = if (state.length == 0) this.supplier else this.supplier.copy(state.head.hist)

@@ -3,6 +3,8 @@ package com.c6h5no2.probfilter.util
 
 /**
  * An immutable random number generator.
+ *
+ * @todo Breaking Change! Previous Cuckoo Filters assume mutability of getInt (prev. nextInt).
  */
 trait RandomIntGenerator extends Serializable {
   /**

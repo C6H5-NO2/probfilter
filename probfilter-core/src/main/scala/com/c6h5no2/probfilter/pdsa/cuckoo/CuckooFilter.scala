@@ -61,7 +61,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
     val index =
       if (bucketSize1 <= bucketCapacity && bucketSize2 > bucketCapacity) bucketIndex1
       else if (bucketSize1 > bucketCapacity && bucketSize2 <= bucketCapacity) bucketIndex2
-      else {if (context.rng.nextInt(2) == 0) bucketIndex1 else bucketIndex2}
+      else {if (context.rng.getInt(2) == 0) bucketIndex1 else bucketIndex2}
     val res = insert(context, new CuckooStrategy.Pair(index, triple.fp), entry, elem)
     copy(res.ttable, res.rng)
   }
@@ -87,7 +87,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
       context.copy(newTTable)
     } else if (bucketSize == bucketCapacity) {
       // displace
-      val victimIndex = context.rng.nextInt(bucketSize)
+      val victimIndex = context.rng.getInt(bucketSize)
       val tup = context.ttable.replace(bucketIndex, entry, victimIndex)
       val victimEntry = tup._1
       val newTTable = tup._2
@@ -98,7 +98,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
       insert(newContext, newPair, victimEntry, elem)
     } else {
       // evict
-      val victimIndex = context.rng.nextInt(bucketSize)
+      val victimIndex = context.rng.getInt(bucketSize)
       val victimEntry = context.ttable.get(bucketIndex).apply(victimIndex)
       val victimFp = strategy.entryType.extractFp(victimEntry)
       val altIndex = strategy.altIndexOf(bucketIndex, victimFp)
@@ -160,7 +160,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
     if (length == 0) {
       return ttable
     }
-    val index = rng.nextInt(length)
+    val index = rng.getInt(length)
     if (index < bucket1.length) {
       val entry = bucket1.apply(index)
       ttable.remove(triple.i, entry)
@@ -208,7 +208,7 @@ sealed trait CuckooFilter[E] extends Filter[E, CuckooFilter[E]] {
   @deprecated
   private def rebalance[T](rng: RandomIntGenerator): TypedCuckooTable[T] = {
     Range.apply(0, strategy.numBuckets).foldLeft(table.typed[T]) { (ttable, _) =>
-      val bucketIndex = rng.nextInt(strategy.numBuckets)
+      val bucketIndex = rng.getInt(strategy.numBuckets)
       if (ttable.size(bucketIndex) <= strategy.bucketSize) {
         ttable
       } else {
@@ -267,10 +267,10 @@ object CuckooFilter {
       zipFold(that = zip)(CuckooFilter.Immutable.emptyTable(strategy).typed[T])(op)
     }
 
-    override protected def rngCopy: RandomIntGenerator = rng.copy()
+    override protected def rngCopy: RandomIntGenerator = rng.nextState()
 
     override protected def copy(table: CuckooTable, rng: RandomIntGenerator): CuckooFilter[E] = {
-      new CuckooFilter.Immutable[E](table, this.strategy, rng.copy())
+      new CuckooFilter.Immutable[E](table, this.strategy, rng.nextState())
     }
   }
 
@@ -293,7 +293,7 @@ object CuckooFilter {
       zipFold(that = zip)(CuckooFilter.Mutable.emptyTable(strategy).typed[T])(op)
     }
 
-    override protected def rngCopy: RandomIntGenerator = rng.copy()
+    override protected def rngCopy: RandomIntGenerator = rng.nextState()
 
     override protected def copy(table: CuckooTable, rng: RandomIntGenerator): CuckooFilter[E] = {
       this.table = table
