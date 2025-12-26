@@ -1,3 +1,21 @@
+> [!IMPORTANT]
+>
+> Declaration:
+>
+> The paper published at PaPoC 2025 [2] represents a fraudulent work by Ege Berkay Gulcan and Burcu Kulahcioglu Ozkan, who have falsified my authorship and plagiarised material from my original research in 2024 [1]. Said publication bears no connection to myself or this code repository. Their misconduct has been concealed following the perfunctory handling of this matter by the TU Delft Research Integrity Committee (Dutch: Commissie Wetenschappelijke Integriteit).
+>
+> Readers interested in this research are directed to [my original thesis](https://resolver.tudelft.nl/uuid:5e06978e-a904-4740-a8a1-59c75fde75eb) for authentic and accurate content.
+>
+> Thank you for upholding academic integrity.
+>
+> Junbo Xiong
+>
+> \
+> [1]: Junbo Xiong. 2024. Conflict-Free Replicated Probabilistic Filter. Master's thesis. Delft University of Technology. https://<!---->resolver.tudelft.nl/uuid:5e06978e-a904-4740-a8a1-59c75fde75eb
+>
+> [2]: *~~Junbo Xiong, Ege Berkay Gulcan, and Burcu Kulahcioglu Ozkan. 2025. CRDTs for Approximate Membership Queries. In PaPoC@EuroSys. ACM, 56-62. https://<!---->doi.org/10.1145/3721473.3722146~~*
+
+
 # probfilter
 `probfilter` is a Java / Scala library for conflict-free replicated probabilistic filters.
 
